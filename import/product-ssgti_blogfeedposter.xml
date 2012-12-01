@@ -1,0 +1,683 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<product productid="ssgti_blogfeedposter" active="1">
+	<title>SSGTI - Blog Feed Poster</title>
+	<description><![CDATA[This product allows users to add feeds to their blogs (RSS/Atom) & their blogs will automatically fetches & posts new items in their from those feeds periodically. User's has full control over feeds' behavior & staff have also full admin control.]]></description>
+	<version>3.8.100</version>
+	<url><![CDATA[http://www.vbulletin.org/forum/misc.php?do=producthelp&pid=ssgti_blogfeedposter]]></url>
+	<versioncheckurl><![CDATA[http://www.vbulletin.org/forum/misc.php?do=productcheck&pid=ssgti_blogfeedposter]]></versioncheckurl>
+	<dependencies>
+		<dependency dependencytype="product" parentproductid="vbblog" minversion="2.0.0" maxversion="2.0.99" />
+		<dependency dependencytype="vbulletin" minversion="3.8.0" maxversion="3.8.99" />
+	</dependencies>
+	<codes>
+		<code version="*">
+			<installcode><![CDATA[if (!file_exists(DIR . '/includes/blog_functions_ssgti_feedposter.php') OR !file_exists(DIR . '/includes/class_dm_blog_ssgti_feedposter.php') OR !file_exists(DIR . '/includes/xml/bitfield_ssgti_blogfeedposter.xml') OR !file_exists(DIR . '/includes/cron/blog_ssgtifeedposter.php'))
+{
+	print_dots_stop();
+	print_cp_message('Please upload the files that came with the "SSGTI - Blog Feed Poster" product before installing or upgrading!');
+}]]></installcode>
+			<uninstallcode />
+		</code>
+		<code version="3.8.100">
+			<installcode><![CDATA[$db->hide_errors();
+require_once(DIR . '/includes/class_dbalter.php');
+$db_alter =& new vB_Database_Alter_MySQL($db);
+
+$mysqlversion = $db->query_first("SELECT version() AS version");
+define('MYSQL_VERSION', $mysqlversion['version']);
+
+$enginetype = (version_compare(MYSQL_VERSION, '4.0.18', '<')) ? 'TYPE' : 'ENGINE';
+$tabletype = (version_compare(MYSQL_VERSION, '4.1', '<')) ? 'HEAP' : 'MEMORY';
+
+$db->query_write("
+	CREATE TABLE IF NOT EXISTS `" . TABLE_PREFIX . "ssgtiblogfeedposter` (
+		`blogfeedid` int(10) unsigned NOT NULL AUTO_INCREMENT,
+		`title` varchar(250) NOT NULL DEFAULT '',
+		`description` varchar(250) NOT NULL DEFAULT '',
+		`displayorder` int(10) unsigned NOT NULL DEFAULT '0',
+		`url` text,
+		`valid` smallint(5) unsigned NOT NULL DEFAULT '0',
+		`dateline` int(10) unsigned NOT NULL DEFAULT '0',
+		`port` smallint(5) unsigned NOT NULL DEFAULT '80',
+		`ttl` smallint(5) unsigned NOT NULL DEFAULT '1500',
+		`maxresults` smallint(6) NOT NULL DEFAULT '0',
+		`userid` int(10) unsigned NOT NULL DEFAULT '0',
+		`titletemplate` mediumtext,
+		`bodytemplate` mediumtext,
+		`searchwords` mediumtext,
+		`blogtype` enum('visible','draft') NOT NULL DEFAULT 'visible',
+		`feedoptions` int(10) unsigned NOT NULL DEFAULT '0',
+		`emailupdate` enum('none','usercp','email') NOT NULL DEFAULT 'none',
+		`options` int(10) unsigned NOT NULL DEFAULT '0',
+		`lastrun` int(10) unsigned NOT NULL DEFAULT '0',
+		PRIMARY KEY (`blogfeedid`),
+		KEY `lastrun` (`lastrun`)
+	) $enginetype=MyISAM
+");
+
+$db->query_write("
+	CREATE TABLE IF NOT EXISTS `" . TABLE_PREFIX . "ssgtiblogfeedposter_log` (
+		`blogfeedid` int(10) unsigned NOT NULL DEFAULT '0',
+		`blogid` int(10) unsigned NOT NULL DEFAULT '0',
+		`blogtype` enum('visible','draft') NOT NULL DEFAULT 'visible',
+		`uniquehash` char(32) NOT NULL DEFAULT '',
+		`contenthash` char(32) NOT NULL DEFAULT '',
+		`dateline` int(10) unsigned NOT NULL DEFAULT '0',
+		PRIMARY KEY (`blogfeedid`,`blogid`,`blogtype`),
+		UNIQUE KEY `uniquehash` (`uniquehash`)
+	) $enginetype=MyISAM
+");
+
+if ($db_alter->fetch_table_info('usergroup'))
+{
+	$db_alter->add_field(array(
+		'name'       => 'ssgti_blogfeedposter_perms',
+		'type'       => 'int',
+		'attributes' => 'unsigned',
+		'default'    => '0',
+	));
+
+	$db_alter->add_field(array(
+		'name'       => 'ssgtiblogfeedpostermax',
+		'type'       => 'int',
+		'attributes' => 'unsigned',
+		'default'    => '0',
+	));
+}
+
+if ($db_alter->fetch_table_info('blog'))
+{
+	$db_alter->add_field(array(
+		'name'       => 'ssgtiblogfeedposter',
+		'type'       => 'int',
+		'attributes' => 'unsigned',
+		'default'    => '0',
+	));
+
+	$db_alter->add_field(array(
+		'name'       => 'ssgtiblogfeedposter_dateline',
+		'type'       => 'int',
+		'attributes' => 'unsigned',
+		'default'    => '0',
+	));
+}
+
+build_forum_permissions();
+$db->show_errors();]]></installcode>
+			<uninstallcode><![CDATA[$db->hide_errors();
+require_once(DIR . '/includes/class_dbalter.php');
+$db_alter =& new vB_Database_Alter_MySQL($db);
+
+$db->query_write("DROP TABLE IF EXISTS " . TABLE_PREFIX . "ssgtiblogfeedposter");
+$db->query_write("DROP TABLE IF EXISTS " . TABLE_PREFIX . "ssgtiblogfeedposter_log");
+
+if ($db_alter->fetch_table_info('usergroup'))
+{
+	$db_alter->drop_field('ssgti_blogfeedposter_perms');
+	$db_alter->drop_field('ssgtiblogfeedpostermax');
+}
+
+if ($db_alter->fetch_table_info('blog'))
+{
+	$db_alter->drop_field('ssgtiblogfeedposter');
+	$db_alter->drop_field('ssgtiblogfeedposter_dateline');
+}
+
+build_forum_permissions();
+$db->show_errors();]]></uninstallcode>
+		</code>
+	</codes>
+	<templates>
+		<template name="ssgti_blogfeedposter_blog_sidebar_generic" templatetype="template" date="1252154744" username="SolidSnake@GTI" version="3.8.100"><![CDATA[				<img src="$stylevar[imgdir_misc]/blog/feed_add.png" border="0" class="inlineimg" alt="" />
+				<a href="blog_ssgtifeedposter.php$session[sessionurl_q]">$vbphrase[ssgti_blogfeedposter_blog_feeds]</a>
+			</div>
+			<div style="margin-top:2px">
+]]></template>
+		<template name="ssgti_blogfeedposter_blog_sidebar_user" templatetype="template" date="1252155055" username="SolidSnake@GTI" version="3.8.100"><![CDATA[					<img src="$stylevar[imgdir_misc]/blog/feed_add.png" border="0" class="inlineimg" alt="" />
+					<a href="blog_ssgtifeedposter.php$session[sessionurl_q]">$vbphrase[ssgti_blogfeedposter_blog_feeds]</a>
+				</li>
+				<li class="smallfont" style="margin-top:2px">
+]]></template>
+		<template name="ssgti_blogfeedposter_feed_entry" templatetype="template" date="1252408230" username="SolidSnake@GTI" version="3.8.100"><![CDATA[<form action="blog_ssgtifeedposter.php?do=addfeed" method="post">
+<input type="hidden" name="s" value="$session[dbsessionhash]" />
+<input type="hidden" name="securitytoken" value="$bbuserinfo[securitytoken]" />
+<input type="hidden" name="do" value="addfeed" />
+<input type="hidden" name="u" value="$userinfo[userid]" />
+
+<if condition="$feedinfo['blogfeedid']">
+	<input type="hidden" name="blogfeedid" value="$feedinfo[blogfeedid]" />
+	<table class="tborder" cellpadding="$stylevar[cellpadding]" cellspacing="$stylevar[cellspacing]" border="0" width="100%" align="center">
+		<tr>
+			<td class="tcat">$vbphrase[ssgti_blogfeedposter_manage_blog_feed]</td>
+		</tr>
+		<if condition="$show['canmoderatefeeds']">
+		<tr>
+			<td class="alt2">
+				<span style="float: $stylevar[right]"><input type="submit" name="domoderate" value="<if condition="$feedinfo['valid']">$vbphrase[ssgti_blogfeedposter_disapprove]<else />$vbphrase[ssgti_blogfeedposter_approve]</if>" class="button" style="width: 100px" /></span>
+				<label class="smallfont" style="color: #FF0000" for="moderate"><if condition="$feedinfo['valid']"><input type="checkbox" value="1" name="disapprove" id="moderate" />$vbphrase[ssgti_blogfeedposter_to_disapprove_blog_feed_description]<else /><input type="checkbox" value="1" name="approve" id="moderate" />$vbphrase[ssgti_blogfeedposter_to_approve_blog_feed_description]</if></label>
+			</td>
+		</tr>
+		</if>
+		<if condition="$show['canmoderatefeeds'] OR $show['candeletefeed']">
+		<tr>
+			<td class="alt1">
+				<span style="float: $stylevar[right]"><input type="submit" name="dodelete" value="$vbphrase[delete]" class="button" style="width: 100px" /></span>
+				<label class="smallfont" for="delete"><input type="checkbox" value="1" name="delete" id="delete" />$vbphrase[ssgti_blogfeedposter_to_delete_blog_feed_description]</label>
+			</td>
+		</tr>
+		</if>
+		<if condition="$show['canmoderatefeeds'] OR $show['canresetfeed']">
+		<tr>
+			<td class="alt2">
+				<span style="float: $stylevar[right]"><input type="submit" name="doreset" value="$vbphrase[ssgti_blogfeedposter_reset]" class="button" style="width: 100px" /></span>
+				<label class="smallfont" for="reset"><input type="checkbox" value="1" name="reset" id="reset" />$vbphrase[ssgti_blogfeedposter_to_reset_blog_feed_description]</label>
+			</td>
+		</tr>
+		</if>
+		<!--
+		<if condition="$show['canmoderatefeeds'] OR $show['canrunfeed']">
+		<tr>
+			<td class="alt1">
+				<span style="float: $stylevar[right]"><input type="submit" name="dorunnow" value="$vbphrase[ssgti_blogfeedposter_runnow]" class="button" style="width: 100px" /></span>
+				<label class="smallfont" for="runnow"><input type="checkbox" value="1" name="runnow" id="runnow" />$vbphrase[ssgti_blogfeedposter_to_runnow_blog_feed_description]</label>
+			</td>
+		</tr>
+		</if>
+		-->
+	</table>
+	<br />
+</if>
+
+$errorlist
+
+<if condition="$show['preview_bits']">
+<table class="tborder" cellpadding="$stylevar[cellpadding]" cellspacing="$stylevar[cellspacing]" border="0" width="100%" align="center">
+<tr>
+	<td class="tcat">$vbphrase[ssgti_blogfeedposter_preview]</td>
+</tr>
+<tr>
+	<td class="panelsurround" align="center">
+	<div class="panel">
+		<div style="width: 70%" align="$stylevar[left]">$preview_bits</div>
+	</div>
+	</td>
+</tr>
+</table>
+<br />
+</if>
+
+
+<table class="tborder" cellpadding="$stylevar[cellpadding]" cellspacing="$stylevar[cellspacing]" border="0" width="100%" align="center">
+<tr>
+	<td class="tcat"><if condition="$feedinfo['blogfeedid']">$vbphrase[ssgti_blogfeedposter_blog_feed_edit] <span class="normal">$feedinfo[realtitle]</span><else />$vbphrase[ssgti_blogfeedposter_blog_feed_add]</if></td>
+</tr>
+<tr>
+	<td class="panelsurround" align="center">
+	<div class="panel">
+		<div style="width: 70%" align="$stylevar[left]">
+			<fieldset class="fieldset">
+				<legend>$vbphrase[ssgti_blogfeedposter_notes]</legend>
+				<div align="justify" style="width: 100%" align="$stylevar[left]">
+					<ol>
+						<li>$vbphrase[ssgti_blogfeedposter_feed_template_desc]</li>
+						<if condition="$content_encoded"><br /><br /><li style="color: #0000FF">$vbphrase[ssgti_blogfeedposter_feed_supports_content_encoded]</li></if>
+					</ol>
+				</div>
+			</fieldset>
+
+			<fieldset class="fieldset">
+				<legend>$vbphrase[ssgti_blogfeedposter_main_options]</legend>
+				<table cellpadding="$stylevar[cellpadding]" cellspacing="$stylevar[formspacer]" border="0">
+				<tr>
+					<td nowrap="nowrap">
+						$vbphrase[ssgti_blogfeedposter_feed_enabled]:
+					</td>
+					<td>
+						<label for="rb_1_feedoptions[enabled]_1"><input type="radio" name="feedoptions[enabled]" id="rb_1_feedoptions[enabled]_1" value="1" tabindex="1" <if condition="$checked[enabled]">checked="checked"</if> />Yes</label>
+						<label for="rb_0_feedoptions[enabled]_1"><input type="radio" name="feedoptions[enabled]" id="rb_0_feedoptions[enabled]_1" value="0" tabindex="2" <if condition="!$checked[enabled]">checked="checked"</if> />No</label>
+					</td>
+				</tr>
+				<tr>
+					<td nowrap="nowrap">
+						$vbphrase[ssgti_blogfeedposter_feed_url]:<br />
+					</td>
+					<td>
+						<input type="text" class="bginput" name="url" value="$feedinfo[url]" size="40" dir="ltr" tabindex="3" />
+					</td>
+				</tr>
+				<tr>
+					<td nowrap="nowrap">
+						$vbphrase[ssgti_blogfeedposter_feed_title]:<br />
+					</td>
+					<td>
+						<input type="text" class="bginput" name="title" value="$feedinfo[title]" size="40" tabindex="4" />
+					</td>
+				</tr>
+				<tr>
+					<td nowrap="nowrap">
+						$vbphrase[ssgti_blogfeedposter_feed_desc]:<br />
+					</td>
+					<td>
+						<input type="text" class="bginput" name="description" value="$feedinfo[description]" size="40" tabindex="5" />
+					</td>
+				</tr>
+				<tr>
+					<td nowrap="nowrap">
+						$vbphrase[ssgti_blogfeedposter_feed_displayorder]:<br />
+					</td>
+					<td>
+						<input type="text" class="bginput" name="displayorder" value="$feedinfo[displayorder]" size="40" tabindex="6" />
+					</td>
+				</tr>
+				<tr>
+					<td nowrap="nowrap">
+						$vbphrase[ssgti_blogfeedposter_feed_maxresults]:<br />
+					</td>
+					<td>
+						<input type="text" class="bginput" name="maxresults" value="$feedinfo[maxresults]" size="40" tabindex="7" />
+					</td>
+				</tr>
+				<tr>
+					<td nowrap="nowrap">
+						$vbphrase[ssgti_blogfeedposter_feed_titletemplate]:<br />
+					</td>
+					<td>
+						<input type="text" class="bginput" name="titletemplate" value="<if condition="$feedinfo[titletemplate]">$feedinfo[titletemplate]<else />{feed:title}</if>" size="40" tabindex="8" />
+					</td>
+				</tr>
+				<tr>
+					<td nowrap="nowrap">
+						$vbphrase[ssgti_blogfeedposter_feed_bodytemplate]:<br />
+					</td>
+					<td>
+						<textarea name="bodytemplate" rows="3" cols="40" tabindex="9"><if condition="$feedinfo[bodytemplate]">$feedinfo[bodytemplate]<else />{feed:description}
+
+[url={feed:link}]More...[/url]</if></textarea>
+					</td>
+				</tr>
+				<tr>
+					<td nowrap="nowrap">
+						$vbphrase[ssgti_blogfeedposter_feed_blogtype]:
+					</td>
+					<td>
+						<select name="blogtype" id="sel_blogtype_1" tabindex="10">
+							<option value="visible" $blogtype[visible]>$vbphrase[ssgti_blogfeedposter_visible]</option>
+							<option value="draft" $blogtype[draft]>$vbphrase[ssgti_blogfeedposter_draft]</option>
+						</select>
+					</td>
+				</tr>
+				<tr>
+					<td nowrap="nowrap">
+						$vbphrase[ssgti_blogfeedposter_feed_checked_every]:
+					</td>
+					<td>
+						<select name="ttl" id="sel_ttl_2" tabindex="11">
+							<option value="600" $ttl[600]><phrase 1="10">$vbphrase[ssgti_blogfeedposter_x_minutes]</phrase></option>
+							<option value="1200" $ttl[1200]><phrase 1="20">$vbphrase[ssgti_blogfeedposter_x_minutes]</phrase></option>
+							<option value="1800" $ttl[1800]><phrase 1="30">$vbphrase[ssgti_blogfeedposter_x_minutes]</phrase></option>
+							<option value="3600" $ttl[3600]><phrase 1="60">$vbphrase[ssgti_blogfeedposter_x_minutes]</phrase></option>
+							<option value="7200" $ttl[7200]><phrase 1="2">$vbphrase[ssgti_blogfeedposter_x_hours]</phrase></option>
+							<option value="14400" $ttl[14400]><phrase 1="4">$vbphrase[ssgti_blogfeedposter_x_hours]</phrase></option>
+							<option value="21600" $ttl[21600]><phrase 1="6">$vbphrase[ssgti_blogfeedposter_x_hours]</phrase></option>
+							<option value="28800" $ttl[28800]><phrase 1="8">$vbphrase[ssgti_blogfeedposter_x_hours]</phrase></option>
+							<option value="36000" $ttl[36000]><phrase 1="10">$vbphrase[ssgti_blogfeedposter_x_hours]</phrase></option>
+							<option value="43200" $ttl[43200]><phrase 1="12">$vbphrase[ssgti_blogfeedposter_x_hours]</phrase></option>
+						</select>
+					</td>
+				</tr>
+				</table>
+			</fieldset>
+
+			<fieldset class="fieldset">
+				<legend>$vbphrase[ssgti_blogfeedposter_blog_entry_options]</legend>
+				<div style="padding:$stylevar[formspacer]px">
+					<ul class="list_no_decoration">
+						<li><label for="cb_options[comments]_1"><input type="checkbox" name="options[allowcomments]" value="1" id="cb_options[comments]_1" tabindex="12" $checked[allowcomments] />$vbphrase[allow_comments_to_be_posted]</label><input type="hidden" name="set_options[allowcomments]" value="1" /><a href="faq.php?$session[sessionurl]faq=vbblog_faq_reading_and_posting_options#faq_vbblog_faq_reading_and_posting_options_allow_comments" target="_blank">[?]</a></li>
+						<if condition="$show['moderatecomments']">
+							<li><label for="cb_options[moderate]_2"><input type="checkbox" name="options[moderatecomments]" value="1" id="cb_options[moderate]_2" tabindex="13" $checked[moderatecomments] />$vbphrase[moderate_comments_before_displaying]</label><input type="hidden" name="set_options[moderatecomments]" value="1" /><a href="faq.php?$session[sessionurl]faq=vbblog_faq_reading_and_posting_options#faq_vbblog_faq_reading_and_posting_options_moderate_comments" target="_blank">[?]</a></li>
+						</if>
+						<if condition="$show['pingback'] OR $show['trackback']">
+							<li><label for="cb_options[pingback]_3"><input type="checkbox" name="options[allowpingback]" value="1" id="cb_options[pingback]_3" tabindex="14" $checked[allowpingback] /><if condition="!$show['pingback']">$vbphrase[allow_trackback]<else /><if condition="!$show['trackback']">$vbphrase[allow_pingback]<else />$vbphrase[allow_trackback_pingback]</if></if></label><input type="hidden" name="set_options[allowpingback]" value="1" /><a href="faq.php?$session[sessionurl]faq=vbblog_faq_reading_and_posting_options#faq_vbblog_faq_reading_and_posting_options_pingback" target="_blank">[?]</a></li>
+						</if>
+						<if condition="$show['notify']">
+							<li><label for="cb_options[notify]_4"><input type="checkbox" name="options[notify]" value="1" id="cb_options[notify]_4" tabindex="15" $checked[notify] />$vbphrase[notify_linked_blogs]</label><input type="hidden" name="set_options[notify]" value="1" /><a href="faq.php?$session[sessionurl]faq=vbblog_faq_reading_and_posting_options#faq_vbblog_faq_reading_and_posting_options_notify" target="_blank">[?]</a></li>
+						</if>
+						<li><label for="cb_options[private]_5"><input type="checkbox" name="options[private]" value="1" id="cb_options[private]_5" tabindex="16" $checked[private] />$vbphrase[restrict_entry_viewing_to_contacts]</label><input type="hidden" name="set_options[private]" value="1" /><a href="faq.php?$session[sessionurl]faq=vbblog_faq_reading_and_posting_options#faq_vbblog_faq_reading_and_posting_options_private" target="_blank">[?]</a></li>
+					</ul>
+				</div>
+			</fieldset>
+
+			<fieldset class="fieldset">
+				<legend>$vbphrase[miscellaneous_options]</legend>
+				<div style="padding:$stylevar[formspacer]px">
+					<div><label for="cb_options[allowsmilies]_7"><input type="checkbox" name="options[allowsmilies]" value="1" id="cb_options[allowsmilies]_7" tabindex="17" $checked[allowsmilies] />$vbphrase[ssgti_blogfeedposter_feed_allowsmilies]</label><input type="hidden" name="set_options[allowsmilies]" value="1" /></div>
+					<div><label for="cb_options[html2bbcode]_8"><input type="checkbox" name="options[html2bbcode]" value="1" id="cb_options[html2bbcode]_8" tabindex="18" $checked[html2bbcode] />$vbphrase[ssgti_blogfeedposter_feed_html2bbcode]</label><input type="hidden" name="set_options[html2bbcode]" value="1" /></div>
+					<if condition="$show['parseurl']">
+						<div>
+							<label for="cb_options[parseurl]_6"><input type="checkbox" name="options[parseurl]" value="1" id="cb_options[parseurl]_6" tabindex="19" $checked[parseurl] />$vbphrase[ssgti_blogfeedposter_automatically_parse_links_in_text]</label><input type="hidden" name="set_options[parseurl]" value="1" />
+						</div>
+					</if>
+					<div><label for="cb_options[origdateline]_9"><input type="checkbox" name="options[origdateline]" value="1" id="cb_options[origdateline]_9" tabindex="20" $checked[origdateline] />$vbphrase[ssgti_blogfeedposter_feed_origdateline]</label><input type="hidden" name="set_options[origdateline]" value="1" /></div>
+				</div>
+			</fieldset>
+
+			<fieldset class="fieldset">
+				<legend>$vbphrase[blog_entry_subscription]</legend>
+					<div style="padding:$stylevar[formspacer]px">
+						<label for="select_emailupdate">$vbphrase[blog_entry_subscription_type]
+						<select name="emailupdate" id="select_emailupdate" tabindex="21">
+							<option value="none" $emailupdate[none]>$vbphrase[ssgti_blogfeedposter_do_not_subscribe]</option>
+							<option value="usercp" $emailupdate[usercp]>$vbphrase[no_email_notification]</option>
+							<option value="email" $emailupdate[email]>$vbphrase[instant_email_notification]</option>
+						</select></label>
+				</div>
+			</fieldset>
+
+		</div>
+	</div>
+
+		<div style="margin-top:$stylevar[cellpadding]px">
+			<input type="submit" name="sbutton" class="button" value="$vbphrase[save_changes]" accesskey="s" />
+			<input type="submit" name="dopreview" class="button" value="$vbphrase[ssgti_blogfeedposter_preview]" accesskey="p" />
+			<input type="reset" class="button" value="$vbphrase[reset_fields]" accesskey="r" />
+		</div>
+	</td>
+</tr>
+</table>
+
+</form>]]></template>
+		<template name="ssgti_blogfeedposter_manage_feeds" templatetype="template" date="1252486696" username="SolidSnake@GTI" version="3.8.100"><![CDATA[<if condition="$show['pagenav']">
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:3px">
+<tr valign="bottom">
+	<td align="$stylevar[right]">$pagenav</td>
+</tr>
+</table>
+</if>
+
+<!-- topic table -->
+<form action="blog_ssgtifeedposter.php?do=updatefeed" method="post" name="form">
+<input type="hidden" name="s" value="$session[sessionhash]" />
+<input type="hidden" name="securitytoken" value="$bbuserinfo[securitytoken]" />
+<input type="hidden" name="u" value="$userinfo[userid]" />
+<input type="hidden" name="do" value="updatefeed" />
+
+<table class="tborder" cellpadding="$stylevar[cellpadding]" cellspacing="$stylevar[cellspacing]" border="0" width="100%" align="center">
+<tr>
+	<td class="tcat" colspan="10">
+		<span class="smallfont" style="float:$stylevar[right]"><strong>$vbphrase[ssgti_blogfeedposter_blog_nfeeds]</strong> $ssgtifeedcount</span>
+		$vbphrase[ssgti_blogfeedposter_blog_feeds]
+	</td>
+</tr>
+<tr>
+	<td class="thead" nowrap="nowrap"><span style="float:$stylevar[right]">$vbphrase[edit]</span>$vbphrase[ssgti_blogfeedposter_blog_feed]</td>
+	<td class="thead" nowrap="nowrap" align="center" width="9%">$vbphrase[ssgti_blogfeedposter_feed_blogtype]</td>
+	<td class="thead" nowrap="nowrap" align="center" width="9%">$vbphrase[ssgti_blogfeedposter_feed_checked_every]</td>
+	<td class="thead" nowrap="nowrap" align="center" width="9%">$vbphrase[display_order]</td>
+	<td class="thead" nowrap="nowrap" align="center" width="9%">$vbphrase[ssgti_blogfeedposter_lastrun]</td>
+	<td class="thead" nowrap="nowrap" align="center" width="9%">$vbphrase[ssgti_blogfeedposter_status]</td>
+	<td class="thead" nowrap="nowrap" align="center" width="9%">$vbphrase[ssgti_blogfeedposter_moderation]</td>
+	<if condition="$show['canmassmanage'] OR $show['canmoderatefeeds']">
+		<if condition="$show['canresetfeed']"><td class="thead" nowrap="nowrap" align="center" width="9%">$vbphrase[ssgti_blogfeedposter_reset]</td></if>
+		<if condition="$show['candeletefeed']"><td class="thead" nowrap="nowrap" align="center" width="9%">$vbphrase[ssgti_blogfeedposter_delete]</td></if>
+		<!-- <if condition="$show['canrunfeed']"><td class="thead" nowrap="nowrap" align="center" width="9%">$vbphrase[ssgti_blogfeedposter_runnow]</td></if> -->
+	</if>
+</tr>
+<if condition="$feedbits">
+$feedbits
+<else />
+<tr>
+	<td colspan="10" class="alt1" align="center">$vbphrase[ssgti_blogfeedposter_you_have_no_blog_feeds]</td>
+</tr>
+</if>
+<tr>
+	<td class="tfoot" colspan="10" align="center" style="height: 34px">
+		&nbsp;
+		<if condition="$feedbits"><input type="submit" name="display" class="button" value="$vbphrase[save_changes]" />&nbsp;</if>
+		<input type="submit" name="addfeed" class="button" value="$vbphrase[ssgti_blogfeedposter_blog_feed_add]" />
+		&nbsp;
+	</td>
+</tr>
+</table>
+
+</form>
+<!-- / topic table -->
+
+<if condition="$show['pagenav']">
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:3px">
+<tr valign="top">
+	<td align="$stylevar[right]">$pagenav</td>
+</tr>
+</table>
+</if>]]></template>
+		<template name="ssgti_blogfeedposter_manage_feeds_bits" templatetype="template" date="1252454916" username="SolidSnake@GTI" version="3.8.100"><![CDATA[<tr>
+	<td class="alt1"><span style="float:$stylevar[right]"><a href="blog_ssgtifeedposter.php?$session[sessionurl]do=modifyfeed&amp;blogfeedid=$blogfeedid"><img src="$stylevar[imgdir_misc]/blog/folder_edit.gif" border="0" class="inlineimg" alt="$vbphrase[edit]" /></a></span><div><a href="blog_ssgtifeedposter.php?$session[sessionurl]do=modifyfeed&amp;blogfeedid=$blogfeedid" title="$feed[url]"><strong>$feed[title]</strong></a></div><div class="smallfont"><a href="$feed[url]" target="feed">$x[host]</a></div></td>
+	<td class="alt2" align="center">$blogtype</td>
+	<td class="alt1" align="center"><phrase 1="$feed[checkedevery]">$vbphrase[ssgti_blogfeedposter_x_minutes]</phrase></td>
+	<td class="alt2" align="center"><input class="bginput" type="text" size="2" maxlength="3" name="displayorder[$blogfeedid]" value="$feed[displayorder]" style="text-align: center" /></td>
+	<td class="alt1" align="center">$datestring</td>
+	<td class="alt2" align="center">
+		<if condition="$show['canmassmanage'] OR $show['canmoderatefeeds']">
+			<label for="cb_enabled[$blogfeedid]"><input type="checkbox" name="enabled[$blogfeedid]" value="1" id="cb_enabled[$blogfeedid]" tabindex="12" $feed[enabled] />$vbphrase[ssgti_blogfeedposter_enabled]</label><input type="hidden" name="set_enabled[$blogfeedid]" value="1" />
+		<else />
+			<if condition="$feed[enabled]"><span style="color: #008000">$vbphrase[ssgti_blogfeedposter_enabled]</span><else /><span style="color: #FF0000">$vbphrase[ssgti_blogfeedposter_disabled]</span></if>
+		</if>
+	</td>
+	<td class="alt1" align="center">
+		<if condition="$show['canmassmanage'] OR $show['canmoderatefeeds']">
+			<label for="cb_approved[$blogfeedid]"><input type="checkbox" name="approved[$blogfeedid]" value="1" id="cb_approved[$blogfeedid]" tabindex="12" $feed[approved] />$vbphrase[ssgti_blogfeedposter_approved]</label><input type="hidden" name="set_approved[$blogfeedid]" value="1" />
+		<else />
+			<if condition="$feed[approved]"><span style="color: #008000">$vbphrase[ssgti_blogfeedposter_approved]</span><else /><span style="color: #FF0000">$vbphrase[ssgti_blogfeedposter_disapproved]</span></if>
+		</if>
+	</td>
+	<if condition="$show['canmassmanage'] OR $show['canmoderatefeeds']">
+		<if condition="$show['canresetfeed']"><td class="alt2" align="center"><input type="checkbox" name="reset[$blogfeedid]" value="1" id="cb_reset[$blogfeedid]" tabindex="12" /><input type="hidden" name="set_reset[$blogfeedid]" value="1" /></td></if>
+		<if condition="$show['candeletefeed']"><td class="alt1" align="center"><input type="checkbox" name="delete[$blogfeedid]" value="1" id="cb_delete[$blogfeedid]" tabindex="12" /><input type="hidden" name="set_delete[$blogfeedid]" value="1" /></td></if>
+		<!-- <if condition="$show['canrunfeed']"><td class="alt2" align="center"><input type="checkbox" name="runnow[$blogfeedid]" value="1" id="cb_runnow[$blogfeedid]" tabindex="12" /><input type="hidden" name="set_runnow[$blogfeedid]" value="1" /></td></if> -->
+	</if>
+</tr>]]></template>
+		<template name="ssgti_blogfeedposter_preview_bits" templatetype="template" date="1252234956" username="SolidSnake@GTI" version="3.8.100"><![CDATA[<div class="alt2" style="border: inset 1px; padding: 5px; height: 175px; margin: 10px; overflow: auto;"><h3><em>$title</em></h3>$body</div>]]></template>
+	</templates>
+	<plugins>
+		<plugin active="1" executionorder="5">
+			<title><![CDATA[SSGTI - Blog Feed Poster - [ AdminCP Main Stats ]]]></title>
+			<hookname>admin_index_main1</hookname>
+			<phpcode><![CDATA[$ssgti_blogfeedposter_ttfeeds = $db->query_first("SELECT COUNT(*) AS ttfeeds FROM " . TABLE_PREFIX . "ssgtiblogfeedposter");
+$ssgti_blogfeedposter_tdfeeds = $db->query_first("SELECT COUNT(*) AS tdfeeds FROM " . TABLE_PREFIX . "ssgtiblogfeedposter WHERE dateline >= $starttime");
+$ssgti_blogfeedposter_alfeeds = $db->query_first("SELECT COUNT(*) AS alfeeds FROM " . TABLE_PREFIX . "ssgtiblogfeedposter WHERE valid = 1");
+$ssgti_blogfeedposter_mdfeeds = $db->query_first("SELECT COUNT(*) AS mdfeeds FROM " . TABLE_PREFIX . "ssgtiblogfeedposter WHERE valid = 0");
+$ssgti_blogfeedposter_acfeeds = $db->query_first("SELECT COUNT(*) AS acfeeds FROM " . TABLE_PREFIX . "ssgtiblogfeedposter WHERE (feedoptions & " . $vbulletin->bf_misc_ssgtiblogfeedposter2['enabled'] . ")");
+$ssgti_blogfeedposter_dsfeeds = $db->query_first("SELECT COUNT(*) AS dsfeeds FROM " . TABLE_PREFIX . "ssgtiblogfeedposter WHERE NOT (feedoptions & " . $vbulletin->bf_misc_ssgtiblogfeedposter2['enabled'] . ")");
+$ssgti_blogfeedposter_usfeeds = $db->query_first("SELECT COUNT(*) AS usfeeds FROM " . TABLE_PREFIX . "ssgtiblogfeedposter GROUP BY userid");
+$ssgti_blogfeedposter_rtfeeds = $db->query_first("SELECT COUNT(*) AS rtfeeds FROM " . TABLE_PREFIX . "ssgtiblogfeedposter WHERE lastrun >= $starttime");
+$ssgti_blogfeedposter_afentries = $db->query_first("SELECT COUNT(*) AS afentries FROM " . TABLE_PREFIX . "blog WHERE ssgtiblogfeedposter > 0");
+$ssgti_blogfeedposter_ptentries = $db->query_first("SELECT COUNT(*) AS ptentries FROM " . TABLE_PREFIX . "blog WHERE ssgtiblogfeedposter > 0 AND ssgtiblogfeedposter_dateline >= $starttime");
+
+
+print_form_header('index', 'home');
+print_table_header($vbphrase['ssgti_blogfeedposter_admincp'], 4);
+print_cells_row(array($vbphrase['ssgti_blogfeedposter_admincp_ttfeeds'], vb_number_format($ssgti_blogfeedposter_ttfeeds['ttfeeds']) . ' ' . construct_link_code($vbphrase['view'], '../' . $vbulletin->config['Misc']['modcpdir'] . '/blog_ssgtifeedposter.php?' . $vbulletin->session->vars['sessionurl'] . "do=feeds&filter=ttfeeds"), $vbphrase['ssgti_blogfeedposter_admincp_tdfeeds'], vb_number_format($ssgti_blogfeedposter_tdfeeds['tdfeeds']) . ' ' . construct_link_code($vbphrase['view'], '../' . $vbulletin->config['Misc']['modcpdir'] . '/blog_ssgtifeedposter.php?' . $vbulletin->session->vars['sessionurl'] . "do=feeds&filter=tdfeeds")), 0, 0, -5, 'top', 1, 1);
+print_cells_row(array($vbphrase['ssgti_blogfeedposter_admincp_alfeeds'], vb_number_format($ssgti_blogfeedposter_alfeeds['alfeeds']) . ' ' . construct_link_code($vbphrase['view'], '../' . $vbulletin->config['Misc']['modcpdir'] . '/blog_ssgtifeedposter.php?' . $vbulletin->session->vars['sessionurl'] . "do=feeds&filter=alfeeds"), $vbphrase['ssgti_blogfeedposter_admincp_mdfeeds'], vb_number_format($ssgti_blogfeedposter_mdfeeds['mdfeeds']) . ' ' . construct_link_code($vbphrase['view'], '../' . $vbulletin->config['Misc']['modcpdir'] . '/blog_ssgtifeedposter.php?' . $vbulletin->session->vars['sessionurl'] . "do=feeds&filter=mdfeeds")), 0, 0, -5, 'top', 1, 1);
+print_cells_row(array($vbphrase['ssgti_blogfeedposter_admincp_acfeeds'], vb_number_format($ssgti_blogfeedposter_acfeeds['acfeeds']) . ' ' . construct_link_code($vbphrase['view'], '../' . $vbulletin->config['Misc']['modcpdir'] . '/blog_ssgtifeedposter.php?' . $vbulletin->session->vars['sessionurl'] . "do=feeds&filter=acfeeds"), $vbphrase['ssgti_blogfeedposter_admincp_dsfeeds'], vb_number_format($ssgti_blogfeedposter_dsfeeds['dsfeeds']) . ' ' . construct_link_code($vbphrase['view'], '../' . $vbulletin->config['Misc']['modcpdir'] . '/blog_ssgtifeedposter.php?' . $vbulletin->session->vars['sessionurl'] . "do=feeds&filter=dsfeeds")), 0, 0, -5, 'top', 1, 1);
+print_cells_row(array($vbphrase['ssgti_blogfeedposter_admincp_usfeeds'], vb_number_format($ssgti_blogfeedposter_usfeeds['usfeeds']) . ' ' . construct_link_code($vbphrase['view'], '../' . $vbulletin->config['Misc']['modcpdir'] . '/blog_ssgtifeedposter.php?' . $vbulletin->session->vars['sessionurl'] . "do=feeds&filter=ttfeeds"), $vbphrase['ssgti_blogfeedposter_admincp_rtfeeds'], vb_number_format($ssgti_blogfeedposter_rtfeeds['rtfeeds']) . ' ' . construct_link_code($vbphrase['view'], '../' . $vbulletin->config['Misc']['modcpdir'] . '/blog_ssgtifeedposter.php?' . $vbulletin->session->vars['sessionurl'] . "do=feeds&filter=rtfeeds")), 0, 0, -5, 'top', 1, 1);
+print_cells_row(array($vbphrase['ssgti_blogfeedposter_admincp_afentries'], vb_number_format($ssgti_blogfeedposter_afentries['afentries']), $vbphrase['ssgti_blogfeedposter_admincp_ptentries'], vb_number_format($ssgti_blogfeedposter_ptentries['ptentries'])), 0, 0, -5, 'top', 1, 1);
+print_table_footer();]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title><![CDATA[SSGTI - Blog Feed Poster - [ Cache Required Templates ]]]></title>
+			<hookname>cache_templates</hookname>
+			<phpcode><![CDATA[if ($vbulletin->userinfo['permissions']['ssgti_blogfeedposter_perms'] & $vbulletin->bf_ugp_ssgti_blogfeedposter_perms['cancreatefeed'])
+{
+	if (defined('VBBLOG_SCRIPT'))
+	{
+		$globaltemplates[] = 'ssgti_blogfeedposter_blog_sidebar_user';
+		$globaltemplates[] = 'ssgti_blogfeedposter_blog_sidebar_generic';
+	}
+}]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title><![CDATA[SSGTI - Blog Feed Poster - [ ModCP Navigation ]]]></title>
+			<hookname>mod_index_navigation</hookname>
+			<phpcode><![CDATA[$can_ssgti_blogfeedposter = FALSE;
+if (!function_exists('can_moderate_blog'))
+{
+	require_once(DIR . '/includes/blog_functions_shared.php');
+}
+
+if (can_moderate_blog('ssgtifeedpostercanedit') OR ($vbulletin->userinfo['permissions']['adminpermissions'] & $vbulletin->bf_ugp_adminpermissions['cancontrolpanel']))
+{
+	$can_ssgti_blogfeedposter = TRUE;
+	construct_nav_option($vbphrase['ssgti_blogfeedposter_moderate_feeds'], 'blog_ssgtifeedposter.php?do=feeds');
+}
+
+if ($can_ssgti_blogfeedposter)
+{
+	construct_nav_group($vbphrase['ssgti_blogfeedposter_moderate_feeds']);
+	construct_nav_spacer();
+}]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title><![CDATA[SSGTI - Blog Feed Poster - [ Template Replacements ]]]></title>
+			<hookname>parse_templates</hookname>
+			<phpcode><![CDATA[if ($vbulletin->userinfo['permissions']['ssgti_blogfeedposter_perms'] & $vbulletin->bf_ugp_ssgti_blogfeedposter_perms['cancreatefeed'])
+{
+	if (THIS_SCRIPT == 'member')
+	{
+		$vbulletin->templatecache['MEMBERINFO'] = str_replace('<ul class=\"thead block_row block_title list_no_decoration floatcontainer\">', '<ul class=\"thead block_row block_title list_no_decoration floatcontainer\"><li class=\"thead\"><a href=\"blog_ssgtifeedposter.php?$session[sessionurl]do=editfeeds&amp;u=$userinfo[userid]\">$vbphrase[ssgti_blogfeedposter_blog_feeds_edit]</a></li>', $vbulletin->templatecache['MEMBERINFO']);
+	}
+
+	if (defined('VBBLOG_SCRIPT'))
+	{
+		$vbulletin->templatecache['blog_sidebar_generic'] = str_replace('<img src=\"$stylevar[imgdir_misc]/blog/cog.gif\" border=\"0\" class=\"inlineimg\" alt=\"\" />', fetch_template('ssgti_blogfeedposter_blog_sidebar_generic') . '<img src=\"$stylevar[imgdir_misc]/blog/cog.gif\" border=\"0\" class=\"inlineimg\" alt=\"\" />', $vbulletin->templatecache['blog_sidebar_generic']);
+		$vbulletin->templatecache['blog_sidebar_user'] = str_replace('<img src=\"$stylevar[imgdir_misc]/blog/user_options.gif\" border=\"0\" class=\"inlineimg\" alt=\"\" />', fetch_template('ssgti_blogfeedposter_blog_sidebar_user') . '<img src=\"$stylevar[imgdir_misc]/blog/user_options.gif\" border=\"0\" class=\"inlineimg\" alt=\"\" />', $vbulletin->templatecache['blog_sidebar_user']);
+		$vbulletin->templatecache['blog_sidebar_user'] = str_replace('<img src=\"$stylevar[imgdir_misc]/blog/markread.gif\" border=\"0\" class=\"inlineimg\" alt=\"\" />', fetch_template('ssgti_blogfeedposter_blog_sidebar_user') . '<img src=\"$stylevar[imgdir_misc]/blog/markread.gif\" border=\"0\" class=\"inlineimg\" alt=\"\" />', $vbulletin->templatecache['blog_sidebar_user']);
+	}
+}]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title><![CDATA[SSGTI - Blog Feed Poster - [ Group Templates ]]]></title>
+			<hookname>template_groups</hookname>
+			<phpcode><![CDATA[$only['ssgti_blogfeedposter'] = $vbphrase['ssgti_blogfeedposter'];]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title><![CDATA[SSGTI - Blog Feed Poster - [ Edit Feeds Link in AdminCP User's Profile ]]]></title>
+			<hookname>useradmin_edit_start</hookname>
+			<phpcode><![CDATA[if ($vbulletin->GPC['userid'])
+{
+	$quicklinks["../" . $vbulletin->config[Misc][modcpdir] . "/blog_ssgtifeedposter.php?" . $vbulletin->session->vars['sessionurl'] . "do=feeds&filter=all&u=" . $vbulletin->GPC['userid']] = $vbphrase['ssgti_blogfeedposter_blog_feeds_edit'];
+}]]></phpcode>
+		</plugin>
+	</plugins>
+	<phrases>
+		<phrasetype name="Control Panel Global" fieldname="cpglobal">
+			<phrase name="ssgti_blogfeedposter_admincp" date="1252567341" username="SolidSnake@GTI" version="3.8.100"><![CDATA[SSGTI - Blog Feed Poster]]></phrase>
+			<phrase name="ssgti_blogfeedposter_admincp_acfeeds" date="1252569030" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Active Feeds Count]]></phrase>
+			<phrase name="ssgti_blogfeedposter_admincp_afentries" date="1252569390" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Blog Entries Posted through Feeds]]></phrase>
+			<phrase name="ssgti_blogfeedposter_admincp_alfeeds" date="1252568667" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Approved Feeds Count]]></phrase>
+			<phrase name="ssgti_blogfeedposter_admincp_dsfeeds" date="1252569078" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Inactive Feeds Count]]></phrase>
+			<phrase name="ssgti_blogfeedposter_admincp_mdfeeds" date="1252568522" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Feeds to Moderate]]></phrase>
+			<phrase name="ssgti_blogfeedposter_admincp_ptentries" date="1252569418" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Blog Entries Posted through Feeds Today]]></phrase>
+			<phrase name="ssgti_blogfeedposter_admincp_rtfeeds" date="1252569252" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Feeds Run Today]]></phrase>
+			<phrase name="ssgti_blogfeedposter_admincp_tdfeeds" date="1252567830" username="SolidSnake@GTI" version="3.8.100"><![CDATA[New Feeds Today]]></phrase>
+			<phrase name="ssgti_blogfeedposter_admincp_ttfeeds" date="1252567869" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Total Feeds Count]]></phrase>
+			<phrase name="ssgti_blogfeedposter_admincp_usfeeds" date="1252569131" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Users have Feeds]]></phrase>
+		</phrasetype>
+		<phrasetype name="Control Panel Home Pages" fieldname="cphome">
+			<phrase name="ssgti_blogfeedposter_feeds" date="1252648744" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Blog Feeds]]></phrase>
+			<phrase name="ssgti_blogfeedposter_moderate_feeds" date="1252649053" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Moderate Blog Feeds]]></phrase>
+		</phrasetype>
+		<phrasetype name="Permissions" fieldname="cppermission">
+			<phrase name="ssgti_blogfeedposter_cancreatefeed" date="1252382153" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Can Create Own Blog Feeds]]></phrase>
+			<phrase name="ssgti_blogfeedposter_candelete" date="1252382399" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Can Delete Own Feeds]]></phrase>
+			<phrase name="ssgti_blogfeedposter_caneditfeeds" date="1252383379" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Can Edit Blog Feeds]]></phrase>
+			<phrase name="ssgti_blogfeedposter_canmassmanage" date="1252382231" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Can Mass Manage Feeds]]></phrase>
+			<phrase name="ssgti_blogfeedposter_canreset" date="1252382434" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Can Reset Feed's Last Run Time]]></phrase>
+			<phrase name="ssgti_blogfeedposter_canrunnow" date="1252382359" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Can force feeds to run now (In Real Time)<dfn>(By default All feeds run automatically through "Scheduled Tasks")</dfn>]]></phrase>
+			<phrase name="ssgti_blogfeedposter_maxfeeds" date="1252382474" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Maximum Feeds Allowed]]></phrase>
+			<phrase name="ssgti_blogfeedposter_moderatefeeds" date="1252382187" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Moderate Feeds By Default<dfn>(New feeds should be approved by administration first before begin working.)</dfn>]]></phrase>
+			<phrase name="ssgti_blogfeedposter_perms" date="1252406658" username="SolidSnake@GTI" version="3.8.100"><![CDATA[SSGTI - Blog Feed Poster]]></phrase>
+		</phrasetype>
+		<phrasetype name="Scheduled Tasks" fieldname="cron">
+			<phrase name="task_ssgti_blogfeedposter_desc" date="1252056460" username="SolidSnake@GTI" version="3.8.100"><![CDATA[This script reads Blog Feeds (RSS/Atom) from the internet and inserts fetched items into your board as blog entries.]]></phrase>
+			<phrase name="task_ssgti_blogfeedposter_log" date="1252056460" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Inserted the following: {1}]]></phrase>
+			<phrase name="task_ssgti_blogfeedposter_title" date="1252056460" username="SolidSnake@GTI" version="3.8.100"><![CDATA[SSGTI - Blog Feed Poster]]></phrase>
+		</phrasetype>
+		<phrasetype name="Error Messages" fieldname="error">
+			<phrase name="ssgti_blogfeedposter_blog_feed_limit" date="1252104659" username="SolidSnake@GTI" version="3.8.100"><![CDATA[You are only permitted to have {1} Blog Feeds.]]></phrase>
+			<phrase name="ssgti_blogfeedposter_invalid_feed_specified" date="1251552670" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Invalid Feed Specified]]></phrase>
+			<phrase name="ssgti_blogfeedposter_saved_feeds_successfully" date="1252565188" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Saved Feeds Successfully.]]></phrase>
+		</phrasetype>
+		<phrasetype name="Style Tools" fieldname="style">
+			<phrase name="ssgti_blogfeedposter" date="1251539571" username="SolidSnake@GTI" version="3.8.100"><![CDATA[SSGTI - Blog Feed Poster]]></phrase>
+		</phrasetype>
+		<phrasetype name="User Tools (global)" fieldname="user">
+			<phrase name="ssgti_blogfeedposter_blog_feeds_edit" date="1252160336" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Edit Blog Feeds]]></phrase>
+		</phrasetype>
+		<phrasetype name="vBulletin Blog Global" fieldname="vbblogglobal">
+			<phrase name="ssgti_blogfeedposter_approve" date="1252385379" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Approve]]></phrase>
+			<phrase name="ssgti_blogfeedposter_approved" date="1252412332" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Approved]]></phrase>
+			<phrase name="ssgti_blogfeedposter_automatically_parse_links_in_text" date="1251838123" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Automatically parse links in text]]></phrase>
+			<phrase name="ssgti_blogfeedposter_blog_entry_options" date="1251695447" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Blog Entry Options]]></phrase>
+			<phrase name="ssgti_blogfeedposter_blog_feed_add" date="1252152941" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Add New Blog Feed]]></phrase>
+			<phrase name="ssgti_blogfeedposter_blog_feed_edit" date="1252152964" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Edit Blog Feed]]></phrase>
+			<phrase name="ssgti_blogfeedposter_blog_feeds" date="1251538387" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Blog Feeds]]></phrase>
+			<phrase name="ssgti_blogfeedposter_blog_nfeeds" date="1251871228" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Feeds]]></phrase>
+			<phrase name="ssgti_blogfeedposter_blog_feed" date="1251871372" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Feed]]></phrase>
+			<phrase name="ssgti_blogfeedposter_delete" date="1252412474" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Delete]]></phrase>
+			<phrase name="ssgti_blogfeedposter_disabled" date="1252412314" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Disabled]]></phrase>
+			<phrase name="ssgti_blogfeedposter_disapprove" date="1252385368" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Disapprove]]></phrase>
+			<phrase name="ssgti_blogfeedposter_disapproved" date="1252412344" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Disapproved]]></phrase>
+			<phrase name="ssgti_blogfeedposter_do_not_subscribe" date="1251838627" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Do not subscribe]]></phrase>
+			<phrase name="ssgti_blogfeedposter_draft" date="1251870735" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Draft]]></phrase>
+			<phrase name="ssgti_blogfeedposter_enabled" date="1252412299" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Enabled]]></phrase>
+			<phrase name="ssgti_blogfeedposter_feed_allowsmilies" date="1251694759" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Allow Smilies]]></phrase>
+			<phrase name="ssgti_blogfeedposter_feed_blogtype" date="1252009724" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Blog Entry Type]]></phrase>
+			<phrase name="ssgti_blogfeedposter_feed_bodytemplate" date="1251865543" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Body Template]]></phrase>
+			<phrase name="ssgti_blogfeedposter_feed_checked_every" date="1251695083" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Check Feed Every]]></phrase>
+			<phrase name="ssgti_blogfeedposter_feed_desc" date="1251693851" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Feed Description]]></phrase>
+			<phrase name="ssgti_blogfeedposter_feed_displayorder" date="1251861995" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Display Order]]></phrase>
+			<phrase name="ssgti_blogfeedposter_feed_enabled" date="1251693748" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Feed is Enabled]]></phrase>
+			<phrase name="ssgti_blogfeedposter_feed_html2bbcode" date="1251695102" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Convert HTML to BB Code]]></phrase>
+			<phrase name="ssgti_blogfeedposter_feed_maxresults" date="1251695053" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Maximum Items to Fetch]]></phrase>
+			<phrase name="ssgti_blogfeedposter_feed_origdateline" date="1251970810" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Publish blog entries with their original publish date]]></phrase>
+			<phrase name="ssgti_blogfeedposter_feed_supports_content_encoded" date="1251691851" username="SolidSnake@GTI" version="3.8.100"><![CDATA[This feed supports <em>content:encoded</em>. Your imported feeds may appear nicer if you use <strong>{feed:content:encoded}</strong> in your "Body Template" instead of <strong>{feed:description}</strong> and enable the <em>Convert HTML to BB Code</em> option.]]></phrase>
+			<phrase name="ssgti_blogfeedposter_feed_template_desc" date="1251866778" username="SolidSnake@GTI" version="3.8.100"><![CDATA[The two templates ("<strong>Title Template</strong>", "<strong>Body Template</strong>") are used for the title (title template) and body (body template) of messages posted by the "Feed Poster".<br /><br />
+You can specify exactly how these items appear and any item from a feed can be inserted by using {feed:fieldname} where 'fieldname' corresponds to one of the following: title, description, link, id, date, enclosure_href and content:encoded.]]></phrase>
+			<phrase name="ssgti_blogfeedposter_feed_title" date="1251693735" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Feed Title]]></phrase>
+			<phrase name="ssgti_blogfeedposter_feed_titletemplate" date="1251865566" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Title Template]]></phrase>
+			<phrase name="ssgti_blogfeedposter_feed_url" date="1251693721" username="SolidSnake@GTI" version="3.8.100"><![CDATA[URL of Feed]]></phrase>
+			<phrase name="ssgti_blogfeedposter_feeds_moderation" date="1252558366" username="SolidSnake@GTI" version="3.8.100"><![CDATA[SSGTI - Blog Feed Poster Moderation]]></phrase>
+			<phrase name="ssgti_blogfeedposter_lastrun" date="1251872787" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Last Run]]></phrase>
+			<phrase name="ssgti_blogfeedposter_main_options" date="1251693111" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Main Options]]></phrase>
+			<phrase name="ssgti_blogfeedposter_manage_blog_feed" date="1252383510" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Manage Blog Feed]]></phrase>
+			<phrase name="ssgti_blogfeedposter_moderation" date="1252412455" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Moderation]]></phrase>
+			<phrase name="ssgti_blogfeedposter_no_feeds_found" date="1252563489" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Sorry, no feeds found.]]></phrase>
+			<phrase name="ssgti_blogfeedposter_notes" date="1251562853" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Notes]]></phrase>
+			<phrase name="ssgti_blogfeedposter_preview" date="1251562936" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Preview]]></phrase>
+			<phrase name="ssgti_blogfeedposter_reset" date="1252385604" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Reset]]></phrase>
+			<phrase name="ssgti_blogfeedposter_runnow" date="1252385587" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Run Now]]></phrase>
+			<phrase name="ssgti_blogfeedposter_status" date="1252412439" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Status]]></phrase>
+			<phrase name="ssgti_blogfeedposter_to_approve_blog_feed_description" date="1252387271" username="SolidSnake@GTI" version="3.8.100"><![CDATA[To Approve this feed, check this box and press the 'Approve' button. ]]></phrase>
+			<phrase name="ssgti_blogfeedposter_to_delete_blog_feed_description" date="1252385291" username="SolidSnake@GTI" version="3.8.100"><![CDATA[To Delete this feed, check this box and press the 'Delete' button. ]]></phrase>
+			<phrase name="ssgti_blogfeedposter_to_disapprove_blog_feed_description" date="1252385260" username="SolidSnake@GTI" version="3.8.100"><![CDATA[To Disapprove this feed, check this box and press the 'Disapprove' button. ]]></phrase>
+			<phrase name="ssgti_blogfeedposter_to_reset_blog_feed_description" date="1252385677" username="SolidSnake@GTI" version="3.8.100"><![CDATA[To Reset this feed's last run time, check this box and press the 'Reset' button. ]]></phrase>
+			<phrase name="ssgti_blogfeedposter_to_runnow_blog_feed_description" date="1252385313" username="SolidSnake@GTI" version="3.8.100"><![CDATA[To Run this feed now, check this box and press the 'Run Now' button. ]]></phrase>
+			<phrase name="ssgti_blogfeedposter_visible" date="1251870746" username="SolidSnake@GTI" version="3.8.100"><![CDATA[Visible]]></phrase>
+			<phrase name="ssgti_blogfeedposter_x_hours" date="1251694033" username="SolidSnake@GTI" version="3.8.100"><![CDATA[{1} Hours]]></phrase>
+			<phrase name="ssgti_blogfeedposter_x_minutes" date="1251694022" username="SolidSnake@GTI" version="3.8.100"><![CDATA[{1} Minutes]]></phrase>
+			<phrase name="ssgti_blogfeedposter_you_have_no_blog_feeds" date="1251871735" username="SolidSnake@GTI" version="3.8.100"><![CDATA[You have no blog feeds]]></phrase>
+		</phrasetype>
+	</phrases>
+	<options>
+	</options>
+	<helptopics>
+	</helptopics>
+	<cronentries>
+		<cron varname="ssgti_blogfeedposter" active="1" loglevel="1">
+			<filename>./includes/cron/blog_ssgtifeedposter.php</filename>
+			<scheduling weekday="-1" day="-1" hour="-1" minute="0,10,20,30,40,50" />
+		</cron>
+	</cronentries>
+	<faqentries>
+	</faqentries>
+</product>

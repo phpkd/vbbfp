@@ -1,0 +1,350 @@
+[B][CENTER]~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+!.............. Brought to you by ([url]www.solidsnakegti.com[/url]) ..............!
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[/CENTER][/B]
+
+
+
+[B][COLOR="Red"]Please remember to click [COLOR="Blue"]Mark as Installed[/COLOR] if you use this modification.[/COLOR]
+[COLOR="DarkOrchid"]Support questions from members who have not marked this as installed will be considered low priority.[/COLOR][/B]
+
+[B]Note:[/B] This product has been requested by "[URL="http://www.vbulletin.org/forum/member.php?u=71136"]actolearn[/URL]" as a custom paid product, It has been completed & delivered few minutes ago. Since most of my custom work licensed under "[URL="http://creativecommons.org/licenses/by-nc-sa/3.0/"]Creative Commons - Attribution-Noncommercial-Share Alike 3.0[/URL]", I publish it now here for public use, I hope this product will be useful for all of you.
+
+
+[B]Name:[/B] SSGTI - Blog Feed Poster
+[B]Version:[/B] 3.8.100
+
+[B]Description:[/B] This product allows users to add feeds to their blogs (RSS/Atom) & their blogs will automatically fetches & posts new items in their from those feeds periodically. User's has full control over feeds' behavior & staff have also full admin control.
+
+
+[B]Compatible with:[/B] All 3.7.4+/3.8.x vBulletin versions.
+
+
+[U][B]Requirements:[/B][/U]
+[LIST]
+[*]vBulletin version 3.8.0+ Or later.
+[*]vBulletin Blog version 2.0.0+ Or later.
+[/LIST]
+
+
+[U][B]Features:[/B][/U]
+[LIST]
+   [*][U][B]General Features:-[/B][/U]
+	[LIST]
+	[*]Fully Phrased.
+	[*]Fully Automated.
+	[*]Fully Supported.
+	[*]Accurate Processing.
+	[*]Professionally Coded.
+	[*]Don't require any manual edits.
+	[*]Doing all default vBulletin checks & Fully vBulletin/vBblog Compatible.
+	[*]Board/Blog Load Zero Queries, queries only when the scheduled task run.
+	[/LIST]
+
+
+   [*][B][U]Specific Features:-[/B][/U]
+	[LIST]
+	[*][B]Feed Options/Features:[/B]
+	     [LIST]
+	     [*][U]Main Options:[/U]
+		[LIST]
+		[*]Can be enabled/disabled by user/staff.
+		[*]Can be approved/disapproved by staff.
+		[*]Feed URL (All feed types from any website over the world are acceptable as soon as it's a valid feed URL: RSS 1, RSS 2, XML, ATOM all acceptable).
+		[*]Feed Name (Title).
+		[*]Feed Description (Short Informative description).
+		[*]Display Order.
+		[*]Maximum Items to Fetch (each run).
+		[*]Title Template.
+		[*]Body Template.
+		     [LIST]
+		     [*]The two templates ("Title Template", "Body Template") are used for the title (title template) and body (body template) of messages posted by the Feed poster.
+		     [*]You can specify exactly how these items appear and any item from a feed can be inserted by using {feed:fieldname} where 'fieldname' corresponds to one of the following: title, description, link, id, date, enclosure_href and content:encoded.
+		     [*]If the feed supports content:encoded. Then imported feeds may appear nicer if you use {feed:content:encoded} in your "Body Template" instead of {feed:description} and enable the Convert HTML to BB Code option.
+		     [/LIST]
+		[*]Blog Entry Type: Fetched Items can be posted as (Visible Entries/Draft Entries).
+		[*]Check Feed Every: This Feed should be checked for new items every how many minutes/Hours.
+		[/LIST]
+
+	     [*][U]Blog Entry Options:[/U]
+		[LIST]
+		[*]Allow comments to be posted (Yes/No).
+		[*]Moderate comments before displaying (Yes/No).
+		[*]Allow trackback / pingback (Yes/No).
+		[*]Notify blogs linked within this blog entry (Yes/No).
+		[*]Restrict entry viewing to Contacts and Blog Moderators (Yes/No).
+		[/LIST]
+
+	     [*][U]Miscellaneous Options:[/U]
+		[LIST]
+		[*]Allow Smilies (Yes/No).
+		[*]Convert HTML to BB Code (Yes/No).
+		[*]Automatically parse links in text (Yes/No).
+		[*]Publish blog entries with their original publish date (Yes/No).
+		   If checked, then fetched entries will be posted with their original post date, otherwise it will be posted with the time it's posted in.
+		[/LIST]
+
+	     [*][U]Blog Entry Subscription:[/U] (Don't Subscribe / No Email Notification / Instant Email Notification)
+
+	     [*][U]Edit Options[/U]
+		[LIST]
+		[*]Can Reset Last Run Time (If has permission to do so).
+		[*]Can Delete Feed (If has permission to do so).
+		[*]Can Approve/Disapprove Feed (If has permission to do so).
+		[/LIST]
+	     [/LIST]
+
+
+	[*][B]Admincp Features:[/B]
+	     [LIST]
+	     [*][U]Statistics:[/U]
+		Detailed statistics in the AdminCP index page
+		  [LIST=1]
+		  [*]Total Feeds Count
+	          [*]New Feeds Today
+		  [*]Approved Feeds Count
+		  [*]Feeds to Moderate
+		  [*]Active Feeds Count
+		  [*]Inactive Feeds Count
+		  [*]Users have Feeds
+		  [*]Feeds Run Today
+		  [*]Blog Entries Posted through Feeds
+		  [*]Blog Entries Posted through Feeds Today
+		  [/LIST]
+		Most of these statistics with links to view/sort results within admincp & control/moderate it.
+
+	     [*][U]Moderation Permissions:[/U]
+		[LIST]
+		[*]Administration & Moderation Staff can granted permissions to control & moderate feeds from within the forum itself or from within AdminCP or ModCP
+		[*]If the staff member has "Administration control panel" access then he's granted it by default, if not then a supervisor staff can give it to him (per blog moderator). Just follow these simple steps:
+		   vBulletin Blog -> Blog Moderators -> Beside each blog moderator click "[Edit Permissions]" -> Can Edit Blog Feeds (On/Off) [Check "Yes"]
+		[/LIST]
+
+	     [*][U]AdminCP/ModCP Moderation page features/options:[/U]
+		First of all, all feeds are categorized per user & sorted by username alphabetically, and then for each user's feeds it's categorized by display order ascending.
+		For each feed you can:
+		  [LIST]
+		  [*]Click:
+		     [LIST]
+		     [*]Feed's name: To go to the full editor page within forum & edit that feed's details.
+		     [*]Edit: To go to the full editor page within forum & edit that feed's details (Same as above).
+		     [*]Feed's URL: To go to the Feed URL itself.
+		     [/LIST]
+		  [*]see:
+		     [LIST]
+		     [*]"Blog Entry Type": In which mode 'new fetched items' are posted in. (Visible/Draft)
+		     [*]"Check Feed Every": This Feed has to be checked for new items every how many minutes.
+		     [*]Feed's "Last Run": Is that feed run before, if 'yes' then when.
+		     [/LIST]
+		  [*]See & Mass Edit:
+		     [LIST]
+		     [*]"Display Order": You can mass edit display order for all feeds.
+		     [*]"Status": You can mass edit status for all feeds displayed (Enabled/Disabled).
+		     [*]"Moderation Status": You can mass edit "Moderation Status" for all feeds displayed (Approved/Disapproved).
+		     [*]Reset "Last Run Time": You can mass reset "last run time" for all feeds displayed.
+		     [*]Delete: You can mass delete some or all displayed feeds by few simple clicks.
+		     [/LIST]
+		  [/LIST]
+		** All of the above control options are flexible, you can select any action you need to process on a specific feed, and choose another action to process on another feed, no problem, just do your checks & click "Save Changes" & the system will do all the work for you all over the selected actions/selected feeds as needed by just few simple clicks. It's the ultimate flexibility! **
+
+	     [*][U]Usergroup Permissions:[/U]
+		[LIST]
+		[*]Can Create Own Blog Feeds (Yes/No).
+		[*]Moderate Feeds By Default (Yes/No).
+		   (If "Yes", then new feeds should be approved by administration first before begin working)
+		[*]Can Mass Manage Feeds (Yes/No).
+		[*]Can Delete Own Feeds (Yes/No).
+		[*]Can Reset Feed's Last Run Time (Yes/No).
+		[*]Maximum Feeds Allowed (Number).
+		[/LIST]
+	     [/LIST]
+
+
+	[*]The product has a cron job (Scheduled Task) that run every 10 minutes to do processes. If you run the cron job from the AdminCP manually, then you will get a report of the process & the fetched items instantly for your review.
+	[*]The Cron job (scheduled Task) logs every run details in "Scheduled Task Log", so you can review it later.
+	[*]All staff management actions through AdminCP & ModCP are logged in the "Control Panel Log".
+	[*]Hooks are embeded within product's files, so it's functionality can be extended later easily.
+	[*]The product's code base is very solid/rich & has many possibilities to help in future development.
+	[/LIST]
+[/LIST]
+
+
+[U][B]Installation Procedure:[/B][/U]
+[LIST=1]
+[*]Upload required files to their appropriate places:
+[LIST]
+[*]images
+[LIST]
+[*]misc
+[LIST]
+[*]feed_add.png
+[/LIST]
+[/LIST]
+[*]includes
+[LIST]
+[*]cron
+[LIST]
+[*]blog_ssgtifeedposter.php
+[/LIST]
+[*]xml
+[LIST]
+[*]bitfield_ssgti_blogfeedposter.xml
+[*]cpnav_ssgti_blogfeedposter.xml
+[*]hooks_ssgti_blogfeedposter.xml
+[/LIST]
+[*]blog_functions_ssgti_feedposter.php
+[*]class_dm_blog_ssgti_feedposter.php
+[/LIST]
+[*]modcp
+[LIST]
+[*]blog_ssgtifeedposter.php
+[/LIST]
+[*]blog_ssgtifeedposter.php
+[/LIST]
+[*]Import product's XML "product-ssgti_blogfeedposter.xml" file from AdminCP.
+[*]Configure product's permissions.
+[*]You're Done :).
+[/LIST]
+
+
+[U][B]Controls:[/B][/U]
+[LIST]
+[*][B][U]AdminCP Usergroup Permissions:[/U][/B]
+vBulletin AdminCP -> Usergroup Manager -> Select "Edit Permissions" for any usergroup -> [B]SSGTI - Blog RSS Poster[/B]
+
+
+[*][B][U]AdminCP Blog Moderation Permissions:[/U][/B]
+vBulletin Blog -> Blog Moderators -> Beside each blog moderator click "[Edit Permissions]" -> [B]Can Edit Blog Feeds (On/Off)[/B]
+
+
+[*][B][U]AdminCP Edit user's feeds link:[/U][/B]
+Search for any user & go to his profile within AdminCP -> Quick User Links -> Open the select menu -> select "[B]Edit Blog Feeds[/B]" (option)
+
+
+[*][B][U]AdminCP Moderate Feeds Link:[/U][/B]
+vBulletin AdminCP -> vBulletin Blog -> [B]Blog Feeds[/B]
+
+
+[*][B][U]ModCP Moderate Feeds Link:[/U][/B]
+vBulletin ModCP -> [B]Moderate Blog Feeds -> Moderate Blog Feeds[/B]
+
+
+[*][B][U]Moderate Feeds from within the forum itself:[/U][/B]
+[url]http://FORUM_LINK/blog_ssgtifeedposter.php?do=editfeeds&u=USERID[/url]
+Where 'FORUM_LINK' is your forum's link & 'USERID' is user's ID that you need to edit/manage/control his/her blog feeds.
+
+[B]Note:[/B] There is many ways to control/manage/moderate users' feeds, you can do so from within the forum itself without logging to AdminCP, you can do it from within ModCP, and you can do it from within AdminCP. It's the maximum usability/flexibility, all features of course are controlled by suitable permissions.
+[/LIST]
+
+
+[U][B]License:[/B][/U]
+--------------- --------------- --------------- ---------------
+Creative Commons - Attribution-Noncommercial-Share Alike 3.0
+[url]http://creativecommons.org/licenses/by-nc-sa/3.0/[/url]
+--------------- --------------- --------------- ---------------
+[LIST]
+[*][B][U]You are free:[/U][/B]
+[LIST]
+[*]To Share — to copy, distribute and transmit the work.
+[*]To Remix — to adapt the work.
+[/LIST]
+
+
+[*][B][U]Under the following conditions:[/U][/B]
+[LIST]
+[*][B][Attribution]:[/B] You must attribute the work in the manner specified by the author or licensor (but not in any way that suggests that they endorse you or your use of the work).
+[*][B][Noncommercial]:[/B] You may not use this work for commercial purposes.
+[*][B][Share Alike]:[/B] If you alter, transform, or build upon this work, you may distribute the resulting work only under the same or similar license to this one.
+[/LIST]
+
+
+[*]For any reuse or distribution, you must make clear to others the original author's copyrights [B]AND[/B] you must make clear to others the license terms of this work. The best way to do this is with a link to this web page ([url]http://creativecommons.org/licenses/by-nc-sa/3.0/[/url]).
+[*]Any of the above conditions can be waived if you get permission from the copyright holder (The original product's author).
+[*]Nothing in this license impairs or restricts the author's moral rights.
+[/LIST]
+--------------- --------------- --------------- ---------------
+Your fair dealing and other rights are in no way affected by the above.
+This is a human-readable summary of the Legal Code (the full license).
+[url]http://creativecommons.org/licenses/by-nc-sa/3.0/legalcode[/url]
+--------------- --------------- --------------- ---------------
+
+
+[U][B]Help with:[/B][/U]
+[LIST]
+[*]Suggestions to develop this product.
+[*]Contributing any updates, upgrades and/or any new features.
+[*]Translations to benefit more users (translation credits goes to their owners).
+[*]Spreading this product. Yes, you're free to re-distribute this product as it is (See license details).
+[/LIST]
+
+
+[U][B]Known Isues:[/B][/U]
+[LIST]
+[*]Nothing till now.
+[/LIST]
+
+
+[U][B]Future TO-DO-LIST:[/B][/U]
+[LIST]
+[*]TO-BE-LISTED!
+[/LIST]
+
+
+[U][B]History:[/B][/U]
+[LIST]
+[*][SIZE="1"][B]v3.8.100[/B] 26/09/2009 08:00 AM UTC: First initial public release.[/SIZE]
+[/LIST]
+
+
+[U][B]Screen Shots:[/B][/U]
+[LIST]
+[*]Available down there.
+[/LIST]
+
+
+[U][B]Notes:[/B][/U]
+[LIST]
+[*]English version only supported & supplied here [B]Currently[/B], further localized versions will be available later.
+[/LIST]
+
+
+[U][B]Technical Notes:[/B][/U]
+[LIST]
+[B][I]
+[*][COLOR="DimGray"]New Plugins:[/COLOR] 6
+[*][COLOR="DimGray"]New Phrases:[/COLOR] 81
+[*][COLOR="dimgray"]New Templates:[/COLOR] 6
+[*][COLOR="dimgray"]Manual Template changes:[/COLOR] 0
+[*][COLOR="dimgray"]Auto Template changes:[/COLOR] 2
+[*][COLOR="dimgray"]New Files:[/COLOR] 9
+[*][COLOR="dimgray"]Manual File Changes:[/COLOR] 0
+[*][COLOR="dimgray"]New vBulletin Settings:[/COLOR] 0
+[*][COLOR="dimgray"]New Usergroup Permissions:[/COLOR] 6
+[*][COLOR="dimgray"]New Moderator Permissions:[/COLOR] 0
+[*][COLOR="dimgray"]New Blog Moderator Permissions:[/COLOR] 1
+[*][COLOR="dimgray"]New Administrator Permissions:[/COLOR] 0
+[*][COLOR="dimgray"]New Forum Options:[/COLOR] 0
+[*][COLOR="dimgray"]New DB Tables:[/COLOR] 3
+[*][COLOR="dimgray"]DB Alterations:[/COLOR] 2
+[*][COLOR="dimgray"]New Cron Jops:[/COLOR] 1
+--------------------------------
+[*][COLOR="dimgray"]Installation Level:[/COLOR] Easy
+[*][COLOR="dimgray"]Installation Time:[/COLOR] ~30 seconds
+[/I][/B]
+[/LIST]
+
+
+[B][U]Donation?:[/U][/B]
+[LIST]
+[*]No, sorry. I appreciate your kindness. But if you need to help/support, then you can ask me for custom work. I'm ready for any custom work :).
+[/LIST]
+
+
+[B][U]Recent Products:[/U][/B]
+[LIST]
+[*][URL="http://www.vbulletin.org/forum/misc.php?do=producthelp&pid=ssgti_advmarqueestd"]SSGTI - Advanced Marquee System / Scroll - Standard Edition[/URL]
+[*][URL="http://www.vbulletin.org/forum/misc.php?do=producthelp&pid=ssgti_vm_throttle"]SSGTI - Visitor Message Throttle[/URL]
+[*][URL="http://www.vbulletin.org/forum/misc.php?do=producthelp&pid=ssgti_banunderage"]SSGTI - Auto Ban Under Age Users[/URL]
+[*][URL="http://www.vbulletin.org/forum/misc.php?do=producthelp&pid=ssgti_prevent_duplposts"]SSGTI - Prevent Duplicate Posts[/URL]
+[*][URL="http://www.vbulletin.org/forum/misc.php?do=producthelp&pid=paidsubcertainapi"]SSGTI - Subscription Certain Payment APIs[/URL]
+[/LIST]

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<hooks>
+
+	<hooktype type="general">
+		<hook>blog_ssgti_feedposter_start</hook>
+		<hook>blog_ssgti_feedposter_editfeeds</hook>
+		<hook>blog_ssgti_feedposter_addfeed_first</hook>
+		<hook>blog_ssgti_feedposter_addfeed_second</hook>
+		<hook>blog_ssgti_feedposter_updatefeed</hook>
+		<hook>blog_ssgti_feedposter_modifyfeed_start</hook>
+		<hook>blog_ssgti_feedposter_modifyfeed_preview</hook>
+		<hook>blog_ssgti_feedposter_modifyfeed_preview_bits</hook>
+		<hook>blog_ssgti_feedposter_modifyfeed_addedit</hook>
+		<hook>blog_ssgti_feedposter_modifyfeed_complete</hook>
+		<hook>blog_ssgti_feedposter_complete</hook>
+	</hooktype>
+
+	<hooktype type="cron">
+		<hook>blog_ssgti_feedposter_cron_start</hook>
+		<hook>blog_ssgti_feedposter_cron_feed</hook>
+		<hook>blog_ssgti_feedposter_cron_item</hook>
+		<hook>blog_ssgti_feedposter_cron_process</hook>
+		<hook>blog_ssgti_feedposter_cron_complete</hook>
+	</hooktype>
+
+	<hooktype type="dataman">
+		<hook>blog_ssgti_feedposter_feeddata_start</hook>
+		<hook>blog_ssgti_feedposter_feeddata_presave</hook>
+		<hook>blog_ssgti_feedposter_feeddata_postsave</hook>
+		<hook>blog_ssgti_feedposter_feeddata_delete</hook>
+	</hooktype>
+
+</hooks>
+
+<!-- CVS: $RCSfile$ - $Revision: 11111 $ -->

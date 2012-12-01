@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<bitfields product="ssgti_blogfeedposter">
+	<bitfielddefs>
+		<group name="ugp">
+			<group name="ssgti_blogfeedposter_perms">
+				<bitfield name="cancreatefeed"                             group="ssgti_blogfeedposter_perms" phrase="ssgti_blogfeedposter_cancreatefeed">1</bitfield>
+				<bitfield name="moderatefeeds"                             group="ssgti_blogfeedposter_perms" phrase="ssgti_blogfeedposter_moderatefeeds">2</bitfield>
+				<bitfield name="canmassmanage"                             group="ssgti_blogfeedposter_perms" phrase="ssgti_blogfeedposter_canmassmanage">4</bitfield>
+				<!-- <bitfield name="canrunnow"                                 group="ssgti_blogfeedposter_perms" phrase="ssgti_blogfeedposter_canrunnow"    >8</bitfield> -->
+				<bitfield name="candelete"                                 group="ssgti_blogfeedposter_perms" phrase="ssgti_blogfeedposter_candelete"    >16</bitfield>
+				<bitfield name="canreset"                                  group="ssgti_blogfeedposter_perms" phrase="ssgti_blogfeedposter_canreset"     >32</bitfield>
+				<bitfield name="ssgtiblogfeedpostermax"     intperm="true" group="ssgti_blogfeedposter_perms" phrase="ssgti_blogfeedposter_maxfeeds"     >0</bitfield>
+			</group>
+		</group>
+		<group name="misc">
+			<group name="vbblogmoderatorpermissions">
+				<bitfield name="ssgtifeedpostercanedit" phrase="ssgti_blogfeedposter_caneditfeeds" default="1">1073741824</bitfield>
+			</group>
+			<group name="ssgtiblogfeedposter">
+				<bitfield name="allowcomments">1</bitfield>
+				<bitfield name="moderatecomments">2</bitfield>
+				<bitfield name="allowpingback">4</bitfield>
+				<bitfield name="notify">8</bitfield>
+				<bitfield name="private">16</bitfield>
+				<bitfield name="parseurl">32</bitfield>
+				<bitfield name="allowsmilies">64</bitfield>
+				<bitfield name="html2bbcode">128</bitfield>
+				<bitfield name="origdateline">256</bitfield>
+			</group>
+			<group name="ssgtiblogfeedposter2">
+				<bitfield name="enabled">1</bitfield>
+				<bitfield name="searchboth">2</bitfield>
+				<bitfield name="matchall">4</bitfield>
+			</group>
+		</group>
+	</bitfielddefs>
+</bitfields>
