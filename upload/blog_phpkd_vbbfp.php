@@ -1,14 +1,15 @@
 <?php
+
 // ####################### SET PHP ENVIRONMENT ###########################
-error_reporting(E_ALL & ~E_NOTICE & ~8192);
+error_reporting(E_ALL & ~E_NOTICE);
 
 // #################### DEFINE IMPORTANT CONSTANTS #######################
-define('THIS_SCRIPT', 'blog_ssgtifeedposter');
+define('VB_PRODUCT', 'vbblog');
+define('THIS_SCRIPT', 'phpkd_vbbfp');
 define('CSRF_PROTECTION', true);
 define('VBBLOG_PERMS', true);
 define('VBBLOG_STYLE', true);
 define('VBBLOG_SCRIPT', true);
-
 
 // ################### PRE-CACHE TEMPLATES AND DATA ######################
 // get special phrase groups
@@ -21,14 +22,14 @@ $specialtemplates = array();
 $globaltemplates = array(
 	'BLOG',
 	'blog_css',
+	'blog_cp_css',
 	'blog_usercss',
+	'blog_header_custompage_link',
 	'blog_sidebar_category_link',
 	'blog_sidebar_comment_link',
 	'blog_sidebar_custompage_link',
 	'blog_sidebar_entry_link',
 	'blog_sidebar_user',
-	'blog_sidebar_calendar',
-	'blog_sidebar_calendar_day',
 	'blog_sidebar_user_block_archive',
 	'blog_sidebar_user_block_category',
 	'blog_sidebar_user_block_comments',
@@ -37,27 +38,31 @@ $globaltemplates = array(
 	'blog_sidebar_user_block_tagcloud',
 	'blog_sidebar_user_block_visitors',
 	'blog_sidebar_user_block_custom',
-	'memberinfo_visitorbit',
-	'ad_blog_sidebar_start',
-	'ad_blog_sidebar_middle',
-	'ad_blog_sidebar_end',
+	'blog_sidebar_calendar',
+	'blog_sidebar_calendar_day',
 	'blog_tag_cloud_link',
+	'ad_blogsidebar_start',
+	'ad_blogsidebar_middle',
+	'ad_blogsidebar_end',
 );
 
 // pre-cache templates used by specific actions
 $actiontemplates = array(
 	'editfeeds' => array(
-		'ssgti_blogfeedposter_manage_feeds',
-		'ssgti_blogfeedposter_manage_feeds_bits',
+		'phpkd_vbbfp_editfeeds',
+		'phpkd_vbbfp_editfeeds_bits',
 	),
 	'modifyfeed' => array(
-		'ssgti_blogfeedposter_feed_entry',
+		'phpkd_vbbfp_modifyfeed',
+	),
+	'updatefeed' => array(
+		'phpkd_vbbfp_modifyfeed',
 	),
 	'addfeed' => array(
 		'newpost_preview',
 		'newpost_errormessage',
-		'ssgti_blogfeedposter_feed_entry',
-		'ssgti_blogfeedposter_preview_bits',
+		'phpkd_vbbfp_modifyfeed',
+		'phpkd_vbbfp_preview_bits',
 	),
 );
 
@@ -66,8 +71,9 @@ $actiontemplates['none'] =& $actiontemplates['editfeeds'];
 // ######################### REQUIRE BACK-END ############################
 require_once('./global.php');
 require_once(DIR . '/includes/blog_init.php');
-require_once(DIR . '/includes/blog_functions_ssgti_feedposter.php');
+require_once(DIR . '/includes/blog_functions_phpkd_vbbfp.php');
 
+verify_blog_url();
 
 // #######################################################################
 // ######################## START MAIN SCRIPT ############################
@@ -75,18 +81,6 @@ require_once(DIR . '/includes/blog_functions_ssgti_feedposter.php');
 
 // ### STANDARD INITIALIZATIONS ###
 $checked = array();
-
-$show['moderatecomments'] = (!$vbulletin->options['vbblog_commentmoderation'] AND $vbulletin->userinfo['permissions']['vbblog_comment_permissions'] & $vbulletin->bf_ugp_vbblog_comment_permissions['blog_followcommentmoderation'] ? true : false);
-$show['pingback'] = ($vbulletin->options['vbblog_pingback'] AND $vbulletin->userinfo['permissions']['vbblog_general_permissions'] & $vbulletin->bf_ugp_vbblog_general_permissions['blog_canreceivepingback'] ? true : false);
-$show['trackback'] = ($vbulletin->options['vbblog_trackback'] AND $vbulletin->userinfo['permissions']['vbblog_general_permissions'] & $vbulletin->bf_ugp_vbblog_general_permissions['blog_canreceivepingback'] ? true : false);
-$show['notify'] = ($vbulletin->options['vbblog_notifylinks'] AND $vbulletin->userinfo['permissions']['vbblog_general_permissions'] & $vbulletin->bf_ugp_vbblog_general_permissions['blog_cansendpingback'] AND $vbulletin->userinfo['guest_canviewmyblog'] ? true : false);
-$show['parseurl'] = ($vbulletin->userinfo['permissions']['vbblog_entry_permissions'] & $vbulletin->bf_ugp_vbblog_entry_permissions['blog_allowbbcode']);
-$show['canmoderatefeeds'] = (can_moderate_blog('ssgtifeedpostercanedit') OR ($vbulletin->userinfo['permissions']['adminpermissions'] & $vbulletin->bf_ugp_adminpermissions['cancontrolpanel']));
-$show['candeletefeed'] = ($vbulletin->userinfo['permissions']['ssgti_blogfeedposter_perms'] & $vbulletin->bf_ugp_ssgti_blogfeedposter_perms['candelete']);
-$show['canrunfeed'] = ($vbulletin->userinfo['permissions']['ssgti_blogfeedposter_perms'] & $vbulletin->bf_ugp_ssgti_blogfeedposter_perms['canrunnow']);
-$show['canresetfeed'] = ($vbulletin->userinfo['permissions']['ssgti_blogfeedposter_perms'] & $vbulletin->bf_ugp_ssgti_blogfeedposter_perms['canreset']);
-$show['canmassmanage'] = ($vbulletin->userinfo['permissions']['ssgti_blogfeedposter_perms'] & $vbulletin->bf_ugp_ssgti_blogfeedposter_perms['canmassmanage']);
-
 
 if (empty($_REQUEST['do']))
 {
@@ -98,8 +92,19 @@ if (!($permissions['forumpermissions'] & $vbulletin->bf_ugp_forumpermissions['ca
 	print_no_permission();
 }
 
+$show['moderatecomments'] = (!$vbulletin->options['vbblog_commentmoderation'] AND $vbulletin->userinfo['permissions']['vbblog_comment_permissions'] & $vbulletin->bf_ugp_vbblog_comment_permissions['blog_followcommentmoderation'] ? true : false);
+$show['pingback'] = ($vbulletin->options['vbblog_pingback'] AND $vbulletin->userinfo['permissions']['vbblog_general_permissions'] & $vbulletin->bf_ugp_vbblog_general_permissions['blog_canreceivepingback'] ? true : false);
+$show['trackback'] = ($vbulletin->options['vbblog_trackback'] AND $vbulletin->userinfo['permissions']['vbblog_general_permissions'] & $vbulletin->bf_ugp_vbblog_general_permissions['blog_canreceivepingback'] ? true : false);
+$show['notify'] = ($vbulletin->options['vbblog_notifylinks'] AND $vbulletin->userinfo['permissions']['vbblog_general_permissions'] & $vbulletin->bf_ugp_vbblog_general_permissions['blog_cansendpingback'] AND $vbulletin->userinfo['guest_canviewmyblog'] ? true : false);
+$show['parseurl'] = ($vbulletin->userinfo['permissions']['vbblog_entry_permissions'] & $vbulletin->bf_ugp_vbblog_entry_permissions['blog_allowbbcode']);
+$show['canmoderatefeeds'] = (can_moderate_blog('phpkd_vbbfp_canedit') OR ($vbulletin->userinfo['permissions']['adminpermissions'] & $vbulletin->bf_ugp_adminpermissions['cancontrolpanel']));
+$show['candeletefeed'] = ($vbulletin->userinfo['permissions']['phpkd_vbbfp_perms'] & $vbulletin->bf_ugp_phpkd_vbbfp_perms['candelete']);
+$show['canrunfeed'] = ($vbulletin->userinfo['permissions']['phpkd_vbbfp_perms'] & $vbulletin->bf_ugp_phpkd_vbbfp_perms['canrunnow']);
+$show['canresetfeed'] = ($vbulletin->userinfo['permissions']['phpkd_vbbfp_perms'] & $vbulletin->bf_ugp_phpkd_vbbfp_perms['canreset']);
+$show['canmassmanage'] = ($vbulletin->userinfo['permissions']['phpkd_vbbfp_perms'] & $vbulletin->bf_ugp_phpkd_vbbfp_perms['canmassmanage']);
 
-($hook = vBulletinHook::fetch_hook('blog_ssgti_feedposter_start')) ? eval($hook) : false;
+
+($hook = vBulletinHook::fetch_hook('blog_phpkd_vbbfp_start')) ? eval($hook) : false;
 
 
 // ############################################################################
@@ -111,7 +116,7 @@ if ($_REQUEST['do'] == 'editfeeds')
 		'userid' => TYPE_UINT,
 	));
 
-	if ($vbulletin->GPC['userid'] AND $vbulletin->GPC['userid'] != $vbulletin->userinfo['userid'] AND can_moderate_blog('ssgtifeedpostercanedit'))
+	if ($vbulletin->GPC['userid'] AND $vbulletin->GPC['userid'] != $vbulletin->userinfo['userid'] AND can_moderate_blog('phpkd_vbbfp_canedit'))
 	{
 		$userinfo = fetch_userinfo($vbulletin->GPC['userid']);
 		cache_permissions($userinfo, false);
@@ -123,7 +128,7 @@ if ($_REQUEST['do'] == 'editfeeds')
 		if (
 			!($vbulletin->userinfo['permissions']['vbblog_general_permissions'] & $vbulletin->bf_ugp_vbblog_general_permissions['blog_canviewown'])
 				OR
-			!($vbulletin->userinfo['permissions']['ssgti_blogfeedposter_perms'] & $vbulletin->bf_ugp_ssgti_blogfeedposter_perms['cancreatefeed'])
+			!($vbulletin->userinfo['permissions']['phpkd_vbbfp_perms'] & $vbulletin->bf_ugp_phpkd_vbbfp_perms['cancreate'])
 		)
 		{
 			print_no_permission();
@@ -131,13 +136,14 @@ if ($_REQUEST['do'] == 'editfeeds')
 		$show['blogcp'] = true;
 	}
 
-	ssgti_blogfeedposter_fetch_ordered_feeds($userinfo['userid']);
+	phpkd_vbbfp_fetch_ordered_feeds($userinfo['userid']);
 
 	$feedbits = '';
-	foreach ($vbulletin->vbblog['ssgtifeedcache']["{$userinfo['userid']}"] AS $blogfeedid => $feed)
+	foreach ($vbulletin->vbblog['phpkd_vbbfp_cache']["{$userinfo['userid']}"] AS $blogfeedid => $feed)
 	{
-		$x = @parse_url($feed['url']);
+		$parsedurl = @parse_url($feed['url']);
 		$feed['checkedevery'] = $feed['ttl'] / 60;
+
 		if ($feed['lastrun'])
 		{
 			$date = vbdate($vbulletin->options['dateformat'], $feed['lastrun'], true);
@@ -148,18 +154,27 @@ if ($_REQUEST['do'] == 'editfeeds')
 		{
 			$datestring = "N/A";
 		}
-		$blogtype = $vbphrase['ssgti_blogfeedposter_' . $feed['blogtype']];
-		$feed['enabled'] = (($feed['feedoptions'] & $vbulletin->bf_misc_ssgtiblogfeedposter2['enabled']) ? ' checked="checked"' : '');
+
+		$blogtype = $vbphrase['phpkd_vbbfp_' . $feed['blogtype']];
+		$feed['enabled'] = (($feed['feedoptions'] & $vbulletin->bf_misc_phpkd_vbbfp2['enabled']) ? ' checked="checked"' : '');
 		$feed['approved'] = ($feed['valid'] ? ' checked="checked"' : '');
+
 		if ($feed['userid'] == 0)
 		{
 			// admin Feed
 			continue;
 		}
-		eval('$feedbits .= "' . fetch_template('ssgti_blogfeedposter_manage_feeds_bits')."\";");
+
+		$templater = vB_Template::create('phpkd_vbbfp_editfeeds_bits');
+			$templater->register('blogfeedid', $blogfeedid);
+			$templater->register('feed', $feed);
+			$templater->register('parsedurl', $parsedurl);
+			$templater->register('blogtype', $blogtype);
+			$templater->register('datestring', $datestring);
+		$feedbits .= $templater->render();
 	}
 
-	$ssgtifeedcount = $vbulletin->vbblog['ssgtifeedcount'][$userinfo['userid']];
+	$phpkd_vbbfp_count = $vbulletin->vbblog['phpkd_vbbfp_count'][$userinfo['userid']];
 
 
 	// Sidebar
@@ -167,21 +182,26 @@ if ($_REQUEST['do'] == 'editfeeds')
 
 	if ($userinfo['userid'] == $vbulletin->userinfo['userid'])
 	{
-		$navbits = array('' => $vbphrase['ssgti_blogfeedposter_blog_feeds']);
+		$navbits = array('' => $vbphrase['phpkd_vbbfp_blog_feeds']);
 	}
 	else
 	{
 		$navbitsdone = true;
 		$navbits = array(
-			'blog.php' . $vbulletin->session->vars['sessionurl_q'] => $vbphrase['blogs'],
-			'blog.php?' . $vbulletin->session->vars['sessionurl'] . "u=$userinfo[userid]" => $userinfo['blog_title'],
-			'' => $vbphrase['ssgti_blogfeedposter_blog_feeds'],
+				fetch_seo_url('bloghome', array())  => $vbphrase['blogs'],
+				fetch_seo_url('blog', $userinfo)  => $userinfo['blog_title'],
+				'' => $vbphrase['phpkd_vbbfp_blog_feeds'],
 		);
 	}
 
-	($hook = vBulletinHook::fetch_hook('blog_ssgti_feedposter_editfeeds')) ? eval($hook) : false;
+	($hook = vBulletinHook::fetch_hook('blog_phpkd_vbbfp_editfeeds')) ? eval($hook) : false;
 
-	eval('$content = "' . fetch_template('ssgti_blogfeedposter_manage_feeds') . '";');
+	$templater = vB_Template::create('phpkd_vbbfp_editfeeds');
+		$templater->register('feedbits', $feedbits);
+		$templater->register('userinfo', $userinfo);
+		$templater->register('bbuserinfo', $bbuserinfo);
+		$templater->register('phpkd_vbbfp_count', $phpkd_vbbfp_count);
+	$content = $templater->render();
 }
 
 
@@ -223,7 +243,7 @@ if ($_POST['do'] == 'addfeed')
 		'dopreview'     => TYPE_STR
 	));
 
-	if ($vbulletin->GPC['userid'] AND $vbulletin->GPC['userid'] != $vbulletin->userinfo['userid'] AND can_moderate_blog('ssgtifeedpostercanedit'))
+	if ($vbulletin->GPC['userid'] AND $vbulletin->GPC['userid'] != $vbulletin->userinfo['userid'] AND can_moderate_blog('phpkd_vbbfp_canedit'))
 	{
 		$userinfo = fetch_userinfo($vbulletin->GPC['userid']);
 		cache_permissions($userinfo, false);
@@ -235,7 +255,7 @@ if ($_POST['do'] == 'addfeed')
 		if (
 			!($vbulletin->userinfo['permissions']['vbblog_general_permissions'] & $vbulletin->bf_ugp_vbblog_general_permissions['blog_canviewown'])
 				OR
-			!($vbulletin->userinfo['permissions']['ssgti_blogfeedposter_perms'] & $vbulletin->bf_ugp_ssgti_blogfeedposter_perms['cancreatefeed'])
+			!($vbulletin->userinfo['permissions']['phpkd_vbbfp_perms'] & $vbulletin->bf_ugp_phpkd_vbbfp_perms['cancreate'])
 		)
 		{
 			print_no_permission();
@@ -245,11 +265,11 @@ if ($_POST['do'] == 'addfeed')
 
 	$errors = array();
 
-	ssgti_blogfeedposter_fetch_ordered_feeds($userinfo['userid']);
+	phpkd_vbbfp_fetch_ordered_feeds($userinfo['userid']);
 
-	$dataman =& datamanager_init('Blog_Ssgti_Feedposter', $vbulletin, ERRTYPE_ARRAY);
+	$dataman =& datamanager_init('Blog_PHPKD_VBBFP', $vbulletin, ERRTYPE_ARRAY);
 
-	($hook = vBulletinHook::fetch_hook('blog_ssgti_feedposter_addfeed_first')) ? eval($hook) : false;
+	($hook = vBulletinHook::fetch_hook('blog_phpkd_vbbfp_addfeed_first')) ? eval($hook) : false;
 
 
 	if ($vbulletin->GPC['dopreview'])
@@ -262,7 +282,7 @@ if ($_POST['do'] == 'addfeed')
 	{
 		if ($feedinfo = $db->query_first("
 			SELECT *
-			FROM " . TABLE_PREFIX . "ssgtiblogfeedposter
+			FROM " . TABLE_PREFIX . "phpkd_vbbfp
 			WHERE blogfeedid = " . $vbulletin->GPC['blogfeedid'] . "
 				AND userid = $userinfo[userid]
 		"))
@@ -285,7 +305,7 @@ if ($_POST['do'] == 'addfeed')
 				}
 			}
 
-			if ($vbulletin->GPC['dodelete'] AND ($vbulletin->userinfo['permissions']['ssgti_blogfeedposter_perms'] & $vbulletin->bf_ugp_ssgti_blogfeedposter_perms['candelete'] OR $show['canmoderatefeeds']))
+			if ($vbulletin->GPC['dodelete'] AND ($vbulletin->userinfo['permissions']['phpkd_vbbfp_perms'] & $vbulletin->bf_ugp_phpkd_vbbfp_perms['candelete'] OR $show['canmoderatefeeds']))
 			{
 				if ($vbulletin->GPC['delete'])
 				{
@@ -300,7 +320,7 @@ if ($_POST['do'] == 'addfeed')
 				}
 			}
 
-			if ($vbulletin->GPC['doreset'] AND ($vbulletin->userinfo['permissions']['ssgti_blogfeedposter_perms'] & $vbulletin->bf_ugp_ssgti_blogfeedposter_perms['canreset'] OR $show['canmoderatefeeds']))
+			if ($vbulletin->GPC['doreset'] AND ($vbulletin->userinfo['permissions']['phpkd_vbbfp_perms'] & $vbulletin->bf_ugp_phpkd_vbbfp_perms['canreset'] OR $show['canmoderatefeeds']))
 			{
 				if ($vbulletin->GPC['reset'])
 				{
@@ -318,8 +338,8 @@ if ($_POST['do'] == 'addfeed')
 
 			if ($show['dodone'])
 			{
-				$vbulletin->url = 'blog_ssgtifeedposter.php?' . $vbulletin->session->vars['sessionurl'] . 'do=editfeeds' . ($vbulletin->GPC['userid'] ? "&amp;u=$userinfo[userid]" : '');
-				eval(print_standard_redirect('redirect_blog_profileupdate'));
+				$vbulletin->url = 'blog_phpkd_vbbfp.php?' . $vbulletin->session->vars['sessionurl'] . 'do=editfeeds' . ($vbulletin->GPC['userid'] ? "&amp;u=$userinfo[userid]" : '');
+				print_standard_redirect('redirect_blog_profileupdate');
 			}
 		}
 		else
@@ -330,7 +350,7 @@ if ($_POST['do'] == 'addfeed')
 	else
 	{
 		$count = 0;
-		foreach($vbulletin->vbblog['ssgtifeedcache'][$userinfo['userid']] AS $feedcheck)
+		foreach($vbulletin->vbblog['phpkd_vbbfp_cache'][$userinfo['userid']] AS $feedcheck)
 		{
 			if ($feedcheck['userid'] == $userinfo['userid'])
 			{
@@ -338,9 +358,9 @@ if ($_POST['do'] == 'addfeed')
 			}
 		}
 
-		if ($count >= $userinfo['permissions']['ssgtiblogfeedpostermax'])
+		if ($count >= $userinfo['permissions']['phpkd_vbbfp_max'])
 		{
-			standard_error(fetch_error('ssgti_blogfeedposter_blog_feed_limit', $userinfo['permissions']['ssgtiblogfeedpostermax']));
+			standard_error(fetch_error('phpkd_vbbfp_blog_feed_limit', $userinfo['permissions']['phpkd_vbbfp_max']));
 		}
 
 		$dataman->set('userid', $userinfo['userid']);
@@ -361,7 +381,7 @@ if ($_POST['do'] == 'addfeed')
 	}
 
 
-	($hook = vBulletinHook::fetch_hook('blog_ssgti_feedposter_addfeed_second')) ? eval($hook) : false;
+	($hook = vBulletinHook::fetch_hook('blog_phpkd_vbbfp_addfeed_second')) ? eval($hook) : false;
 
 
 	if (empty($errors) AND !defined('PREVIEW'))
@@ -373,7 +393,7 @@ if ($_POST['do'] == 'addfeed')
 
 		if (!$vbulletin->GPC['blogfeedid'])
 		{
-			$dataman->set('valid', !($vbulletin->userinfo['permissions']['ssgti_blogfeedposter_perms'] & $vbulletin->bf_ugp_ssgti_blogfeedposter_perms['moderatefeeds']));
+			$dataman->set('valid', !($vbulletin->userinfo['permissions']['phpkd_vbbfp_perms'] & $vbulletin->bf_ugp_phpkd_vbbfp_perms['moderatefeeds']));
 		}
 
 		$dataman->set('dateline', TIMENOW);
@@ -394,7 +414,7 @@ if ($_POST['do'] == 'addfeed')
 		}
 
 		// Feed Entry Options bitfield(s)
-		foreach ($vbulletin->bf_misc_ssgtiblogfeedposter AS $key => $val)
+		foreach ($vbulletin->bf_misc_phpkd_vbbfp AS $key => $val)
 		{
 			if (isset($vbulletin->GPC['options']["$key"]) OR isset($vbulletin->GPC['set_options']["$key"]))
 			{
@@ -418,8 +438,8 @@ if ($_POST['do'] == 'addfeed')
 			$dataman->save();
 			unset($dataman);
 
-			$vbulletin->url = 'blog_ssgtifeedposter.php?' . $vbulletin->session->vars['sessionurl'] . 'do=editfeeds' . ($show['modedit'] ? "&amp;u=$userinfo[userid]" : '');
-			eval(print_standard_redirect('redirect_blog_profileupdate'));
+			$vbulletin->url = 'blog_phpkd_vbbfp.php?' . $vbulletin->session->vars['sessionurl'] . 'do=editfeeds' . ($show['modedit'] ? "&amp;u=$userinfo[userid]" : '');
+			print_standard_redirect('redirect_blog_profileupdate');
 		}
 	}
 }
@@ -447,10 +467,10 @@ if ($_POST['do'] == 'updatefeed')
 	));
 
 
-	($hook = vBulletinHook::fetch_hook('blog_ssgti_feedposter_updatefeed')) ? eval($hook) : false;
+	($hook = vBulletinHook::fetch_hook('blog_phpkd_vbbfp_updatefeed')) ? eval($hook) : false;
 
 
-	if ($vbulletin->GPC['userid'] AND $vbulletin->GPC['userid'] != $vbulletin->userinfo['userid'] AND can_moderate_blog('ssgtifeedpostercanedit'))
+	if ($vbulletin->GPC['userid'] AND $vbulletin->GPC['userid'] != $vbulletin->userinfo['userid'] AND can_moderate_blog('phpkd_vbbfp_canedit'))
 	{
 		$userinfo = fetch_userinfo($vbulletin->GPC['userid']);
 		cache_permissions($userinfo, false);
@@ -462,7 +482,7 @@ if ($_POST['do'] == 'updatefeed')
 		if (
 			!($vbulletin->userinfo['permissions']['vbblog_general_permissions'] & $vbulletin->bf_ugp_vbblog_general_permissions['blog_canviewown'])
 				OR
-			!($vbulletin->userinfo['permissions']['ssgti_blogfeedposter_perms'] & $vbulletin->bf_ugp_ssgti_blogfeedposter_perms['cancreatefeed'])
+			!($vbulletin->userinfo['permissions']['phpkd_vbbfp_perms'] & $vbulletin->bf_ugp_phpkd_vbbfp_perms['cancreate'])
 		)
 		{
 			print_no_permission();
@@ -482,7 +502,7 @@ if ($_POST['do'] == 'updatefeed')
 		{
 			foreach ($vbulletin->GPC['set_enabled'] AS $key => $val)
 			{
-				$dataman =& datamanager_init('Blog_Ssgti_Feedposter', $vbulletin, ERRTYPE_ARRAY);
+				$dataman =& datamanager_init('Blog_PHPKD_VBBFP', $vbulletin, ERRTYPE_ARRAY);
 				$value = $vbulletin->GPC['enabled']["$key"];
 				$dataman->set_condition("blogfeedid = '" . $key . "'");
 				$dataman->set_bitfield('feedoptions', 'enabled', $value);
@@ -495,7 +515,7 @@ if ($_POST['do'] == 'updatefeed')
 		{
 			foreach ($vbulletin->GPC['set_approved'] AS $key => $val)
 			{
-				$dataman =& datamanager_init('Blog_Ssgti_Feedposter', $vbulletin, ERRTYPE_ARRAY);
+				$dataman =& datamanager_init('Blog_PHPKD_VBBFP', $vbulletin, ERRTYPE_ARRAY);
 				$value = $vbulletin->GPC['approved']["$key"];
 				$dataman->set_condition("blogfeedid = '" . $key . "'");
 				$dataman->set('valid', $value);
@@ -515,7 +535,7 @@ if ($_POST['do'] == 'updatefeed')
 				}
 			}
 
-			$dataman =& datamanager_init('Blog_Ssgti_Feedposter', $vbulletin, ERRTYPE_ARRAY);
+			$dataman =& datamanager_init('Blog_PHPKD_VBBFP', $vbulletin, ERRTYPE_ARRAY);
 			$dataman->condition = "blogfeedid IN (0$finalresetids)";
 			$dataman->set('lastrun', 0);
 			$dataman->save();
@@ -534,7 +554,7 @@ if ($_POST['do'] == 'updatefeed')
 				}
 			}
 
-			$dataman =& datamanager_init('Blog_Ssgti_Feedposter', $vbulletin, ERRTYPE_ARRAY);
+			$dataman =& datamanager_init('Blog_PHPKD_VBBFP', $vbulletin, ERRTYPE_ARRAY);
 			$dataman->condition = "blogfeedid IN (0$finaldeleteids)";
 			$dataman->delete();
 			unset($dataman);
@@ -551,7 +571,7 @@ if ($_POST['do'] == 'updatefeed')
 		if (!empty($casesql))
 		{
 			$db->query_write("
-				UPDATE " . TABLE_PREFIX . "ssgtiblogfeedposter
+				UPDATE " . TABLE_PREFIX . "phpkd_vbbfp
 				SET displayorder =
 				CASE
 					" . implode("\r\n", $casesql) . "
@@ -561,8 +581,8 @@ if ($_POST['do'] == 'updatefeed')
 			");
 		}
 
-		$vbulletin->url = 'blog_ssgtifeedposter.php?' . $vbulletin->session->vars['sessionurl'] . 'do=editfeeds' . ($show['modedit'] ? "&amp;u=$userinfo[userid]" : '');
-		eval(print_standard_redirect('redirect_blog_profileupdate'));
+		$vbulletin->url = 'blog_phpkd_vbbfp.php?' . $vbulletin->session->vars['sessionurl'] . 'do=editfeeds' . ($show['modedit'] ? "&amp;u=$userinfo[userid]" : '');
+		print_standard_redirect('redirect_blog_profileupdate');
 	}
 }
 
@@ -577,7 +597,7 @@ if ($_REQUEST['do'] == 'modifyfeed')
 	));
 
 
-	($hook = vBulletinHook::fetch_hook('blog_ssgti_feedposter_modifyfeed_start')) ? eval($hook) : false;
+	($hook = vBulletinHook::fetch_hook('blog_phpkd_vbbfp_modifyfeed_start')) ? eval($hook) : false;
 
 
 	$feedinfo = array('displayorder' => 1);
@@ -586,7 +606,7 @@ if ($_REQUEST['do'] == 'modifyfeed')
 	{
 		if (!($feedinfo = $db->query_first("
 			SELECT *
-			FROM " . TABLE_PREFIX . "ssgtiblogfeedposter
+			FROM " . TABLE_PREFIX . "phpkd_vbbfp
 			WHERE blogfeedid = " . $vbulletin->GPC['blogfeedid'] . "
 		")))
 		{
@@ -596,7 +616,7 @@ if ($_REQUEST['do'] == 'modifyfeed')
 
 		if ($feedinfo['userid'] != $vbulletin->userinfo['userid'])
 		{
-			if (!can_moderate_blog('ssgtifeedpostercanedit'))
+			if (!can_moderate_blog('phpkd_vbbfp_canedit'))
 			{
 				standard_error(fetch_error('invalidid', 'blogfeedid', $vbulletin->options['contactuslink']));
 			}
@@ -616,7 +636,7 @@ if ($_REQUEST['do'] == 'modifyfeed')
 		if (
 			!($userinfo['permissions']['vbblog_general_permissions'] & $vbulletin->bf_ugp_vbblog_general_permissions['blog_canviewown'])
 				OR
-			!($userinfo['permissions']['ssgti_blogfeedposter_perms'] & $vbulletin->bf_ugp_ssgti_blogfeedposter_perms['cancreatefeed'])
+			!($userinfo['permissions']['phpkd_vbbfp_perms'] & $vbulletin->bf_ugp_phpkd_vbbfp_perms['cancreate'])
 		)
 		{
 			print_no_permission();
@@ -625,13 +645,13 @@ if ($_REQUEST['do'] == 'modifyfeed')
 
 
 		// make sure they have less than the limit
-		if (!isset($vbulletin->vbblog['ssgtifeedcache'][$userinfo['userid']]))
+		if (!isset($vbulletin->vbblog['phpkd_vbbfp_cache'][$userinfo['userid']]))
 		{
-			ssgti_blogfeedposter_fetch_ordered_feeds($userinfo['userid']);
+			phpkd_vbbfp_fetch_ordered_feeds($userinfo['userid']);
 		}
 
 		$count = 0;
-		foreach($vbulletin->vbblog['ssgtifeedcache'][$userinfo['userid']] AS $feedcheck)
+		foreach($vbulletin->vbblog['phpkd_vbbfp_cache'][$userinfo['userid']] AS $feedcheck)
 		{
 			if ($feedcheck['userid'] == $userinfo['userid'])
 			{
@@ -639,9 +659,9 @@ if ($_REQUEST['do'] == 'modifyfeed')
 			}
 		}
 
-		if ($count >= $userinfo['permissions']['ssgtiblogfeedpostermax'])
+		if ($count >= $userinfo['permissions']['phpkd_vbbfp_max'])
 		{
-			standard_error(fetch_error('ssgti_blogfeedposter_blog_feed_limit', $userinfo['permissions']['ssgtiblogfeedpostermax']));
+			standard_error(fetch_error('phpkd_vbbfp_blog_feed_limit', $userinfo['permissions']['phpkd_vbbfp_max']));
 		}
 	}
 
@@ -699,10 +719,10 @@ if ($_REQUEST['do'] == 'modifyfeed')
 
 
 		$errors = array();
-		$dataman =& datamanager_init('Blog_Ssgti_Feedposter', $vbulletin, ERRTYPE_ARRAY);
+		$dataman =& datamanager_init('Blog_PHPKD_VBBFP', $vbulletin, ERRTYPE_ARRAY);
 		$dataman->set('userid', $userinfo['userid']);
 
-		($hook = vBulletinHook::fetch_hook('blog_ssgti_feedposter_modifyfeed_preview')) ? eval($hook) : false;
+		($hook = vBulletinHook::fetch_hook('blog_phpkd_vbbfp_modifyfeed_preview')) ? eval($hook) : false;
 
 
 		if (empty($errors))
@@ -714,7 +734,7 @@ if ($_REQUEST['do'] == 'modifyfeed')
 
 			if (!$vbulletin->GPC['blogfeedid'])
 			{
-				$dataman->set('valid', !($vbulletin->userinfo['permissions']['ssgti_blogfeedposter_perms'] & $vbulletin->bf_ugp_ssgti_blogfeedposter_perms['moderatefeeds']));
+				$dataman->set('valid', !($vbulletin->userinfo['permissions']['phpkd_vbbfp_perms'] & $vbulletin->bf_ugp_phpkd_vbbfp_perms['moderatefeeds']));
 			}
 
 			$dataman->set('dateline', TIMENOW);
@@ -732,7 +752,7 @@ if ($_REQUEST['do'] == 'modifyfeed')
 				$dataman->set_bitfield('feedoptions', $key, $val);
 			}
 
-			foreach ($vbulletin->bf_misc_ssgtiblogfeedposter AS $key => $val)
+			foreach ($vbulletin->bf_misc_phpkd_vbbfp AS $key => $val)
 			{
 				if (isset($vbulletin->GPC['options']["$key"]) OR isset($vbulletin->GPC['set_options']["$key"]))
 				{
@@ -765,11 +785,12 @@ if ($_REQUEST['do'] == 'modifyfeed')
 			else
 			{
 				require_once(DIR . '/includes/class_bbcode.php');
-				require_once(DIR . '/includes/functions_wysiwyg.php');
+				require_once(DIR . '/includes/class_wysiwygparser.php');
 
 				$count = 0;
 				$preview_bits = '';
 				$bbcode_parser =& new vB_BbCodeParser($vbulletin, fetch_tag_list());
+				$html_parser = new vB_WysiwygHtmlParser($vbulletin);
 
 				foreach ($xml->fetch_items() AS $item)
 				{
@@ -784,7 +805,7 @@ if ($_REQUEST['do'] == 'modifyfeed')
 						$content_encoded = true;
 					}
 
-					$title = $bbcode_parser->parse(strip_bbcode(convert_wysiwyg_html_to_bbcode($xml->parse_template($vbulletin->GPC['titletemplate'], $item))), 0, false);
+					$title = $bbcode_parser->parse(strip_bbcode($html_parser->parse_wysiwyg_html_to_bbcode($xml->parse_template($vbulletin->GPC['titletemplate'], $item)), 0, false));
 
 					if ($vbulletin->GPC['options']['html2bbcode'])
 					{
@@ -798,14 +819,17 @@ if ($_REQUEST['do'] == 'modifyfeed')
 					$body = $xml->parse_template($body_template, $item);
 					if ($vbulletin->GPC['options']['html2bbcode'])
 					{
-						$body = convert_wysiwyg_html_to_bbcode($body, false, true);
+						$body = $html_parser->parse_wysiwyg_html_to_bbcode($body, false, true);
 					}
 					$body = $bbcode_parser->parse($body, 0, false);
 
 
-					($hook = vBulletinHook::fetch_hook('blog_ssgti_feedposter_modifyfeed_preview_bits')) ? eval($hook) : false;
+					($hook = vBulletinHook::fetch_hook('blog_phpkd_vbbfp_modifyfeed_preview_bits')) ? eval($hook) : false;
 
-					eval('$preview_bits .= "' . fetch_template('ssgti_blogfeedposter_preview_bits')."\";");
+					$templater = vB_Template::create('phpkd_vbbfp_preview_bits');
+						$templater->register('title', $title);
+						$templater->register('body', $body);
+					$preview_bits = $templater->render();
 				}
 			}
 		}
@@ -822,7 +846,7 @@ if ($_REQUEST['do'] == 'modifyfeed')
 
 			if (!is_array($feedinfo['feedoptions']))
 			{
-				$feedinfo['feedoptions'] = convert_bits_to_array($feedinfo['feedoptions'], $vbulletin->bf_misc_ssgtiblogfeedposter2);
+				$feedinfo['feedoptions'] = convert_bits_to_array($feedinfo['feedoptions'], $vbulletin->bf_misc_phpkd_vbbfp2);
 			}
 
 			foreach ($feedinfo['feedoptions'] AS $bitname => $bitvalue)
@@ -833,7 +857,7 @@ if ($_REQUEST['do'] == 'modifyfeed')
 
 			if (!is_array($feedinfo['options']))
 			{
-				$feedinfo['options'] = convert_bits_to_array($feedinfo['options'], $vbulletin->bf_misc_ssgtiblogfeedposter);
+				$feedinfo['options'] = convert_bits_to_array($feedinfo['options'], $vbulletin->bf_misc_phpkd_vbbfp);
 			}
 
 			foreach ($feedinfo['options'] AS $bitname => $bitvalue)
@@ -851,7 +875,7 @@ if ($_REQUEST['do'] == 'modifyfeed')
 		}
 
 
-		($hook = vBulletinHook::fetch_hook('blog_ssgti_feedposter_modifyfeed_addedit')) ? eval($hook) : false;
+		($hook = vBulletinHook::fetch_hook('blog_phpkd_vbbfp_modifyfeed_addedit')) ? eval($hook) : false;
 	}
 
 
@@ -861,8 +885,8 @@ if ($_REQUEST['do'] == 'modifyfeed')
 	if ($userinfo['userid'] == $vbulletin->userinfo['userid'])
 	{
 		$navbits = array(
-			'blog_ssgtifeedposter.php?' . $vbulletin->session->vars['sessionurl'] . 'do=editfeeds' => $vbphrase['ssgti_blogfeedposter_blog_feeds'],
-			'' => ($feedinfo['blogfeedid'] ? $vbphrase['ssgti_blogfeedposter_blog_feed_edit'] : $vbphrase['ssgti_blogfeedposter_blog_feed_add'])
+			'blog_phpkd_vbbfp.php?' . $vbulletin->session->vars['sessionurl'] . 'do=editfeeds' => $vbphrase['phpkd_vbbfp_blog_feeds'],
+			'' => ($feedinfo['blogfeedid'] ? $vbphrase['phpkd_vbbfp_blog_feed_edit'] : $vbphrase['phpkd_vbbfp_blog_feed_add'])
 		);
 	}
 	else
@@ -875,19 +899,31 @@ if ($_REQUEST['do'] == 'modifyfeed')
 
 		if ($vbulletin->GPC['blogfeedid'])
 		{
-			$navbits['blog_ssgtifeedposter.php?' . $vbulletin->session->vars['sessionurl'] . "do=editfeeds&amp;u=$userinfo[userid]"] = $vbphrase['ssgti_blogfeedposter_blog_feeds'];
+			$navbits['blog_phpkd_vbbfp.php?' . $vbulletin->session->vars['sessionurl'] . "do=editfeeds&amp;u=$userinfo[userid]"] = $vbphrase['phpkd_vbbfp_blog_feeds'];
 			$navbits[] = $feedinfo['title'];
 		}
 		else
 		{
-			$navbits[] = $vbphrase['ssgti_blogfeedposter_blog_feeds'];
+			$navbits[] = $vbphrase['phpkd_vbbfp_blog_feeds'];
 		}
 	}
 
 
-	($hook = vBulletinHook::fetch_hook('blog_ssgti_feedposter_modifyfeed_complete')) ? eval($hook) : false;
+	($hook = vBulletinHook::fetch_hook('blog_phpkd_vbbfp_modifyfeed_complete')) ? eval($hook) : false;
 
-	eval('$content = "' . fetch_template('ssgti_blogfeedposter_feed_entry') . '";');
+	$templater = vB_Template::create('phpkd_vbbfp_modifyfeed');
+		$templater->register('feedinfo', $feedinfo);
+		$templater->register('userinfo', $userinfo);
+		$templater->register('bbuserinfo', $bbuserinfo);
+		$templater->register('errorlist', $errorlist);
+		$templater->register('preview_bits', $preview_bits);
+		$templater->register('content_encoded', $content_encoded);
+		$templater->register('checked', $checked);
+		$templater->register('blogtype', $blogtype);
+		$templater->register('ttl', $ttl);
+		$templater->register('emailupdate', $emailupdate);
+		$templater->register('errorlist', $errorlist);
+	$content = $templater->render();
 }
 
 
@@ -898,40 +934,53 @@ if ($_REQUEST['do'] == 'modifyfeed')
 if (empty($navbits))
 {
 	$navbits = array(
-		'blog.php' . $vbulletin->session->vars['sessionurl_q'] => $vbphrase['blogs']
+		fetch_seo_url('bloghome', array())  => $vbphrase['blogs']
 	);
-
 	if ($vbulletin->userinfo['permissions']['vbblog_general_permissions'] & $vbulletin->bf_ugp_vbblog_general_permissions['blog_canviewown'])
 	{
-		$navbits['blog.php?' . $vbulletin->session->vars['sessionurl'] . 'u=' . $vbulletin->userinfo['userid']] = $vbulletin->userinfo['blog_title'];
+		$navbits[fetch_seo_url('blog', $vbulletin->userinfo)] = $vbulletin->userinfo['blog_title'];
 	}
-
-	$navbits[''] = $vbphrase['ssgti_blogfeedposter_blog_feeds'];
+	$navbits[''] = $vbphrase['blog_control_panel'];
 
 }
 else if (!$navbitsdone)
 {
 	$prenavbits = array(
-		'blog.php' . $vbulletin->session->vars['sessionurl_q'] => $vbphrase['blogs']
+		fetch_seo_url('bloghome', array())  => $vbphrase['blogs'],
 	);
-
 	if ($vbulletin->userinfo['permissions']['vbblog_general_permissions'] & $vbulletin->bf_ugp_vbblog_general_permissions['blog_canviewown'])
 	{
-		$prenavbits['blog.php?' . $vbulletin->session->vars['sessionurl'] . 'u=' . $vbulletin->userinfo['userid']] = $vbulletin->userinfo['blog_title'];
+		$prenavbits[fetch_seo_url('blog', $vbulletin->userinfo)] = $vbulletin->userinfo['blog_title'];
 	}
-
+	$prenavbits[fetch_seo_url('blogusercp', array())] = $vbphrase['blog_control_panel'];
 	$navbits = array_merge($prenavbits, $navbits);
 }
-
 $navbits = construct_navbits($navbits);
 
-eval('$navbar = "' . fetch_template('navbar') . '";');
+$navbar = render_navbar_template($navbits);
 
-($hook = vBulletinHook::fetch_hook('blog_ssgti_feedposter_complete')) ? eval($hook) : false;
+($hook = vBulletinHook::fetch_hook('blog_phpkd_vbbfp_complete')) ? eval($hook) : false;
 
 // CSS
-eval('$headinclude .= "' . fetch_template('blog_css') . '";');
+$headinclude .= vB_Template::create('blog_css')->render();
+$headinclude .= vB_Template::create('blog_cp_css')->render();
 
 // shell template
-eval('print_output("' . fetch_template('BLOG') . '");');
+$templater = vB_Template::create('BLOG');
+	$templater->register_page_templates();
+	$templater->register('abouturl', $abouturl);
+	$templater->register('blogheader', $blogheader);
+	$templater->register('bloginfo', $bloginfo);
+	$templater->register('blogrssinfo', $blogrssinfo);
+	$templater->register('bloguserid', $bloguserid);
+	$templater->register('content', $content);
+	$templater->register('navbar', $navbar);
+	$templater->register('onload', $onload);
+	$templater->register('pagetitle', $pagetitle);
+	$templater->register('pingbackurl', $pingbackurl);
+	$templater->register('sidebar', $sidebar);
+	$templater->register('trackbackurl', $trackbackurl);
+	$templater->register('usercss_profile_preview', $usercss_profile_preview);
+print_output($templater->render());
+
 ?>

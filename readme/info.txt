@@ -1,5 +1,5 @@
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-! Brought to you by (www.solidsnakegti.com) !
+ï»¿~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+! Brought to you by (www.phpkd.net) !
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -10,12 +10,12 @@ Note:
 
 Name:
 ~~~~~~
-   * SSGTI - Blog Feed Poster
+   * PHPKD - vB Blog Feed Poster
 
 
 Version:
 ~~~~~~~~~
-   * 3.8.100
+   * 4.2.100
 
 
 Description:
@@ -25,13 +25,12 @@ Description:
 
 vBulletin Compatibility:
 ~~~~~~~~~~~~~~~~~~~~~~~~~
-   * All 3.7.4+/3.8.x vBulletin versions.
+   * All 4.0.x/4.1.x/4.2.x vBulletin Suite versions.
 
 
 Requirements:
 ~~~~~~~~~~~~~~
-   * vBulletin version 3.8.0+ Or later.
-   * vBulletin Blog version 2.0.0+ Or later.
+   * vBulletin Suite version 4.0.0+ Or later.
 
 
 Features:
@@ -42,7 +41,7 @@ Features:
 	* Fully Supported.
 	* Accurate Processing.
 	* Professionally Coded.
-	* Don't require any manual edits.
+	* Doesn't require any manual edits.
 	* Doing all default vBulletin checks & Fully vBulletin/vBblog Compatible.
 	* Board/Blog Load Zero Queries, queries only when the scheduled task run.
 
@@ -161,20 +160,20 @@ Installation Procedure:
 
 	includes
 	   cron
-	      blog_ssgtifeedposter.php
+	      blog_phpkd_vbbfp.php
 	   xml
-	      bitfield_ssgti_blogfeedposter.xml
-	      cpnav_ssgti_blogfeedposter.xml
-	      hooks_ssgti_blogfeedposter.xml
-	   blog_functions_ssgti_feedposter.php
-	   class_dm_blog_ssgti_feedposter.php
+	      bitfield_phpkd_vbbfp.xml
+	      cpnav_phpkd_vbbfp.xml
+	      hooks_phpkd_vbbfp.xml
+	   blog_functions_phpkd_vbbfp.php
+	   class_dm_blog_phpkd_vbbfp.php
 
 	modcp
-	   blog_ssgtifeedposter.php
+	   blog_phpkd_vbbfp.php
 
-	blog_ssgtifeedposter.php
+	blog_phpkd_vbbfp.php
 
-   2. Import product's XML "product-ssgti_blogfeedposter.xml" file from AdminCP.
+   2. Import product's XML "product-phpkd_vbbfp.xml" file from AdminCP.
    3. Configure product's permissions.
    4. You're Done :).
 
@@ -182,7 +181,7 @@ Installation Procedure:
 Controls:
 ~~~~~~~~~~
    * AdminCP Usergroup Permissions:
-	vBulletin AdminCP -> Usergroup Manager -> Select "Edit Permissions" for any usergroup -> SSGTI - Blog RSS Poster
+	vBulletin AdminCP -> Usergroup Manager -> Select "Edit Permissions" for any usergroup -> PHPKD - vB Blog RSS Poster
    * AdminCP Blog Moderation Permissions:
 	vBulletin Blog -> Blog Moderators -> Beside each blog moderator click "[Edit Permissions]" -> Can Edit Blog Feeds (On/Off)
    * AdminCP Edit user's feeds link:
@@ -192,7 +191,7 @@ Controls:
    * ModCP Moderate Feeds Link:
 	vBulletin ModCP -> Moderate Blog Feeds -> Moderate Blog Feeds
    * Moderate Feeds from within the forum itself:
-      http://FORUM_LINK/blog_ssgtifeedposter.php?do=editfeeds&u=USERID
+      http://FORUM_LINK/blog_phpkd_vbbfp.php?do=editfeeds&u=USERID
       Where 'FORUM_LINK' is your forum's link & 'USERID' is user's ID that you need to edit/manage/control his/her blog feeds.
 
    Note: There is many ways to control/manage/moderate users' feeds, you can do so from within the forum itself without logging to AdminCP, you can do it from within ModCP, and you can do it from within AdminCP. It's the maximum usability/flexibility, all features of course are controlled by suitable permissions.
@@ -208,8 +207,8 @@ License:
 
    * You are free:
    ~~~~~~~~~~~~~~~~
-	+ To Share — to copy, distribute and transmit the work.
-	+ To Remix — to adapt the work.
+	+ To Share ï¿½ to copy, distribute and transmit the work.
+	+ To Remix ï¿½ to adapt the work.
 
    * Under the following conditions:
    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -251,77 +250,14 @@ Future TO-DO-LIST:
 History:
 ~~~~~~~~~
    * v3.8.100 26/09/2009 08:00 AM UTC: First initial public release.
-
-
-Screen Shots:
-~~~~~~~~~~~~~~
-   * Available in the screenshots folder.
-
-
-Notes:
-~~~~~~~~~~~~~~~~~
-   * English version only supported & supplied here "Currently", further localized versions will be available later.
-
-
-Technical Notes:
-~~~~~~~~~~~~~~~~~
-   * New Plugins: 6
-   * New Phrases: 81
-   * New Templates: 6
-   * Manual Template changes: 0
-   * Auto Template changes: 2
-   * New Files: 9
-   * Manual File Changes: 0
-   * New vBulletin Settings: 0
-   * New Usergroup Permissions: 6
-   * New Moderator Permissions: 0
-   * New Blog Moderator Permissions: 1
-   * New Administrator Permissions: 0
-   * New Forum Options: 0
-   * New DB Tables: 2
-   * DB Alterations: 2
-   * New Cron Jops: 1
-     -----------------
-   * Installation Level: Easy
-   * Installation Time: ~30 seconds
-
-
-Donation?:
-~~~~~~~~~~~
-   * No, sorry. I appreciate your kindness. But if you need to help/support, then you can ask me for custom work. I'm ready for any custom work :).
-
-
-Need Custom Coding?:
-~~~~~~~~~~~~~~~~~~~~~
-   * E-Mail Me: followgti+vborg [at] gmail (dot) com
-   * OR: Contact Me: http://www.vbulletin.org/forum/member.php?u=74086
+   * v4.2.100 21/06/2012 10:00 PM UTC: First initial 4.x.x public release.
 
 
 Reference Links:
 ~~~~~~~~~~~~~~~~~
-   * vBulletin.org: http://www.vbulletin.org/forum/misc.php?do=producthelp&pid=ssgti_blogfeedposter
-   * SolidSnakeGTI.com: http://www.solidsnakegti.com/forum/
-
-
-Recent Products:
-~~~~~~~~~~~~~~~~~
-
-   * SSGTI - Advanced Marquee System / Scroll - Standard Edition
-	http://www.vbulletin.org/forum/misc.php?do=producthelp&pid=ssgti_advmarqueestd
-
-   * SSGTI - Visitor Message Throttle
-	http://www.vbulletin.org/forum/misc.php?do=producthelp&pid=ssgti_vm_throttle
-
-   * SSGTI - Auto Ban Under Age Users
-	http://www.vbulletin.org/forum/misc.php?do=producthelp&pid=ssgti_banunderage
-
-   * SSGTI - Prevent Duplicate Posts
-	http://www.vbulletin.org/forum/misc.php?do=producthelp&pid=ssgti_prevent_duplposts
-
-   * SSGTI - Subscription Certain Payment APIs
-	http://www.vbulletin.org/forum/misc.php?do=producthelp&pid=paidsubcertainapi
+   * PHP KingDom: http://forum.phpkd.net/
 
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-! Sponsored by: PHP KingDom (www.solidsnakegti.com) !
+! Sponsored by: PHP KingDom (www.phpkd.net) !
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

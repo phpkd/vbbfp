@@ -7,11 +7,11 @@ if (!class_exists('vB_DataManager'))
 /**
 * Class to do data save/delete operations for blog Feeds
 *
-* @package	SSGTI
+* @package	PHPKD - vB Blog Feed Poster
 * @version	$Revision: 1111111 $
 * @date		$Date: 2009-09-09 09:09:09 -0900 (Thu, 09 Sep 2009) $
 */
-class vB_DataManager_Blog_Ssgti_Feedposter extends vB_DataManager
+class vB_DataManager_Blog_PHPKD_VBBFP extends vB_DataManager
 {
 	/**
 	* Array of recognised and required fields
@@ -24,7 +24,7 @@ class vB_DataManager_Blog_Ssgti_Feedposter extends vB_DataManager
 		'description'   => array(TYPE_STR,  REQ_NO,   VF_METHOD, 'verify_description'),
 		'displayorder'  => array(TYPE_UINT, REQ_NO),
 		'url'           => array(TYPE_STR,  REQ_YES),
-		'valid'         => array(TYPE_STR,  REQ_NO),
+		'valid'         => array(TYPE_UINT, REQ_NO),
 		'dateline'      => array(TYPE_UINT, REQ_NO),
 		'port'          => array(TYPE_UINT, REQ_NO),
 		'ttl'           => array(TYPE_UINT, REQ_NO),
@@ -47,8 +47,8 @@ class vB_DataManager_Blog_Ssgti_Feedposter extends vB_DataManager
 	* @var	array
 	*/
 	var $bitfields = array(
-		'feedoptions' => 'bf_misc_ssgtiblogfeedposter2',
-		'options'     => 'bf_misc_ssgtiblogfeedposter',
+		'feedoptions' => 'bf_misc_phpkd_vbbfp2',
+		'options'     => 'bf_misc_phpkd_vbbfp',
 	);
 
 
@@ -65,7 +65,7 @@ class vB_DataManager_Blog_Ssgti_Feedposter extends vB_DataManager
 	*
 	* @var	string
 	*/
-	var $table = 'ssgtiblogfeedposter';
+	var $table = 'phpkd_vbbfp';
 
 
 	/**
@@ -74,11 +74,11 @@ class vB_DataManager_Blog_Ssgti_Feedposter extends vB_DataManager
 	* @param	vB_Registry	Instance of the vBulletin data registry object - expected to have the database object as one of its $this->db member.
 	* @param	integer		One of the ERRTYPE_x constants
 	*/
-	function vB_DataManager_Blog_Ssgti_Feedposter(&$registry, $errtype = ERRTYPE_STANDARD)
+	function vB_DataManager_Blog_PHPKD_VBBFP(&$registry, $errtype = ERRTYPE_STANDARD)
 	{
 		parent::vB_DataManager($registry, $errtype);
 
-		($hook = vBulletinHook::fetch_hook('blog_ssgti_feedposter_feeddata_start')) ? eval($hook) : false;
+		($hook = vBulletinHook::fetch_hook('blog_phpkd_vbbfp_feeddata_start')) ? eval($hook) : false;
 	}
 
 
@@ -90,7 +90,7 @@ class vB_DataManager_Blog_Ssgti_Feedposter extends vB_DataManager
 		}
 
 		$return_value = true;
-		($hook = vBulletinHook::fetch_hook('blog_ssgti_feedposter_feeddata_presave')) ? eval($hook) : false;
+		($hook = vBulletinHook::fetch_hook('blog_phpkd_vbbfp_feeddata_presave')) ? eval($hook) : false;
 
 		$this->presave_called = $return_value;
 		return $return_value;
@@ -117,27 +117,27 @@ class vB_DataManager_Blog_Ssgti_Feedposter extends vB_DataManager
 			$userdata->save();
 		}
 
-		($hook = vBulletinHook::fetch_hook('blog_ssgti_feedposter_feeddata_postsave')) ? eval($hook) : false;
+		($hook = vBulletinHook::fetch_hook('blog_phpkd_vbbfp_feeddata_postsave')) ? eval($hook) : false;
 	}
 
 
 	function delete($doquery = true)
 	{
-		($hook = vBulletinHook::fetch_hook('blog_ssgti_feedposter_feeddata_delete')) ? eval($hook) : false;
+		($hook = vBulletinHook::fetch_hook('blog_phpkd_vbbfp_feeddata_delete')) ? eval($hook) : false;
 
-		if ($feed = $this->registry->db->query_first_slave("SELECT blogfeedid, userid FROM " . TABLE_PREFIX . "ssgtiblogfeedposter WHERE " . $this->condition))
+		if ($feed = $this->registry->db->query_first_slave("SELECT blogfeedid, userid FROM " . TABLE_PREFIX . "phpkd_vbbfp WHERE " . $this->condition))
 		{
 			$this->registry->db->query_write("
 				UPDATE " . TABLE_PREFIX . "blog
-				SET ssgtiblogfeedposter = 0
-				WHERE ssgtiblogfeedposter = '" . $this->fetch_field('blogfeedid') . "'
+				SET phpkd_vbbfp = 0
+				WHERE phpkd_vbbfp = '" . $this->fetch_field('blogfeedid') . "'
 			");
 
-			$this->db_delete(TABLE_PREFIX, 'ssgtiblogfeedposter', $this->condition);
+			$this->db_delete(TABLE_PREFIX, 'phpkd_vbbfp', $this->condition);
 		}
 		else
 		{
-			$this->error('ssgti_blogfeedposter_invalid_feed_specified');
+			$this->error('phpkd_vbbfp_invalid_feed_specified');
 		}
 	}
 

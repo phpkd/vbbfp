@@ -1,0 +1,648 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<product productid="phpkd_vbbfp" active="1">
+	<title>PHPKD - vB Blog Feed Poster</title>
+	<description><![CDATA[This product allows users to add feeds to their blogs (RSS/Atom) & their blogs will automatically fetches & posts new items in their from those feeds periodically. User's has full control over feeds' behavior & staff have also full admin control.]]></description>
+	<version>4.2.100</version>
+	<url><![CDATA[http://www.vbulletin.org/forum/misc.php?do=producthelp&pid=phpkd_vbbfp]]></url>
+	<versioncheckurl><![CDATA[http://www.vbulletin.org/forum/misc.php?do=productcheck&pid=phpkd_vbbfp]]></versioncheckurl>
+	<dependencies>
+		<dependency dependencytype="product" parentproductid="vbblog" minversion="4.0.0" maxversion="4.2.99" />
+		<dependency dependencytype="vbulletin" minversion="4.0.0" maxversion="4.2.99" />
+	</dependencies>
+	<codes>
+		<code version="*">
+			<installcode><![CDATA[if (!file_exists(DIR . '/includes/blog_functions_phpkd_vbbfp.php') OR !file_exists(DIR . '/includes/class_dm_blog_phpkd_vbbfp.php') OR !file_exists(DIR . '/includes/xml/bitfield_phpkd_vbbfp.xml') OR !file_exists(DIR . '/includes/cron/blog_phpkd_vbbfp.php'))
+{
+	print_dots_stop();
+	print_cp_message('Please upload the files that came with the "PHPKD - vB Blog Feed Poster" product before installing or upgrading!');
+}]]></installcode>
+			<uninstallcode />
+		</code>
+		<code version="4.2.100">
+			<installcode><![CDATA[$db->hide_errors();
+require_once(DIR . '/includes/class_dbalter.php');
+$db_alter =& new vB_Database_Alter_MySQL($db);
+
+$mysqlversion = $db->query_first("SELECT version() AS version");
+define('MYSQL_VERSION', $mysqlversion['version']);
+
+$enginetype = (version_compare(MYSQL_VERSION, '4.0.18', '<')) ? 'TYPE' : 'ENGINE';
+$tabletype = (version_compare(MYSQL_VERSION, '4.1', '<')) ? 'HEAP' : 'MEMORY';
+
+$db->query_write("
+	CREATE TABLE IF NOT EXISTS `" . TABLE_PREFIX . "phpkd_vbbfp` (
+		`blogfeedid` int(10) unsigned NOT NULL AUTO_INCREMENT,
+		`title` varchar(250) NOT NULL DEFAULT '',
+		`description` varchar(250) NOT NULL DEFAULT '',
+		`displayorder` int(10) unsigned NOT NULL DEFAULT '0',
+		`url` text,
+		`valid` smallint(5) unsigned NOT NULL DEFAULT '0',
+		`dateline` int(10) unsigned NOT NULL DEFAULT '0',
+		`port` smallint(5) unsigned NOT NULL DEFAULT '80',
+		`ttl` smallint(5) unsigned NOT NULL DEFAULT '1500',
+		`maxresults` smallint(6) NOT NULL DEFAULT '0',
+		`userid` int(10) unsigned NOT NULL DEFAULT '0',
+		`titletemplate` mediumtext,
+		`bodytemplate` mediumtext,
+		`searchwords` mediumtext,
+		`blogtype` enum('visible','draft') NOT NULL DEFAULT 'visible',
+		`feedoptions` int(10) unsigned NOT NULL DEFAULT '0',
+		`emailupdate` enum('none','usercp','email') NOT NULL DEFAULT 'none',
+		`options` int(10) unsigned NOT NULL DEFAULT '0',
+		`lastrun` int(10) unsigned NOT NULL DEFAULT '0',
+		PRIMARY KEY (`blogfeedid`),
+		KEY `lastrun` (`lastrun`)
+	) $enginetype=MyISAM
+");
+
+$db->query_write("
+	CREATE TABLE IF NOT EXISTS `" . TABLE_PREFIX . "phpkd_vbbfp_log` (
+		`blogfeedid` int(10) unsigned NOT NULL DEFAULT '0',
+		`blogid` int(10) unsigned NOT NULL DEFAULT '0',
+		`blogtype` enum('visible','draft') NOT NULL DEFAULT 'visible',
+		`uniquehash` char(32) NOT NULL DEFAULT '',
+		`contenthash` char(32) NOT NULL DEFAULT '',
+		`dateline` int(10) unsigned NOT NULL DEFAULT '0',
+		PRIMARY KEY (`blogfeedid`,`blogid`,`blogtype`),
+		UNIQUE KEY `uniquehash` (`uniquehash`)
+	) $enginetype=MyISAM
+");
+
+if ($db_alter->fetch_table_info('usergroup'))
+{
+	$db_alter->add_field(array(
+		'name'       => 'phpkd_vbbfp_perms',
+		'type'       => 'int',
+		'attributes' => 'unsigned',
+		'default'    => '0',
+	));
+
+	$db_alter->add_field(array(
+		'name'       => 'phpkd_vbbfp_max',
+		'type'       => 'int',
+		'attributes' => 'unsigned',
+		'default'    => '0',
+	));
+}
+
+if ($db_alter->fetch_table_info('blog'))
+{
+	$db_alter->add_field(array(
+		'name'       => 'phpkd_vbbfp',
+		'type'       => 'int',
+		'attributes' => 'unsigned',
+		'default'    => '0',
+	));
+
+	$db_alter->add_field(array(
+		'name'       => 'phpkd_vbbfp_dateline',
+		'type'       => 'int',
+		'attributes' => 'unsigned',
+		'default'    => '0',
+	));
+}
+
+build_forum_permissions();
+$db->show_errors();]]></installcode>
+			<uninstallcode><![CDATA[$db->hide_errors();
+require_once(DIR . '/includes/class_dbalter.php');
+$db_alter =& new vB_Database_Alter_MySQL($db);
+
+$db->query_write("DROP TABLE IF EXISTS " . TABLE_PREFIX . "phpkd_vbbfp");
+$db->query_write("DROP TABLE IF EXISTS " . TABLE_PREFIX . "phpkd_vbbfp_log");
+
+if ($db_alter->fetch_table_info('usergroup'))
+{
+	$db_alter->drop_field('phpkd_vbbfp_perms');
+	$db_alter->drop_field('phpkd_vbbfp_max');
+}
+
+if ($db_alter->fetch_table_info('blog'))
+{
+	$db_alter->drop_field('phpkd_vbbfp');
+	$db_alter->drop_field('phpkd_vbbfp_dateline');
+}
+
+build_forum_permissions();
+$db->show_errors();]]></uninstallcode>
+		</code>
+	</codes>
+	<templates>
+		<template name="phpkd_vbbfp_blog_sidebar" templatetype="template" date="1340135935" username="PHPKD" version="4.2.100"><![CDATA[							</li>
+							<li>
+								<img src="{vb:stylevar imgdir_misc}/blog/feed_add.png" border="0" class="inlineimg" alt="" />
+								<a href="{vb:raw $vboptions.vbblog_url}{vb:if "$vboptions['vbblog_url']", '/', ''}blog_phpkd_vbbfp.php?{vb:raw session.sessionurl}do=editfeeds">{vb:rawphrase phpkd_vbbfp_blog_feeds}</a>
+]]></template>
+		<template name="phpkd_vbbfp_editfeeds" templatetype="template" date="1340302887" username="PHPKD" version="4.2.100"><![CDATA[<div id="pagetitle">
+	<span class="smallfont" style="float:{vb:stylevar right}; padding-top: 10px"><strong>{vb:rawphrase phpkd_vbbfp_blog_nfeeds}</strong> {vb:raw phpkd_vbbfp_count}</span>
+	<h1>{vb:rawphrase phpkd_vbbfp_blog_feeds}</h1>
+</div>
+
+<vb:if condition="$show['pagenav']">
+<div id="pagination_top">
+	{vb:raw pagenav}
+</div>
+</vb:if>
+
+<form action="{vb:raw $vboptions.vbblog_url}{vb:if "$vboptions['vbblog_url']", '/', ''}blog_phpkd_vbbfp.php?do=updatefeed" method="post" name="form" class="block">
+	<div class="blockbody">
+		<table class="bloglist">
+			<thead>
+				<tr class="columnsort">
+					<th class="bloglistinfo blocksubhead">
+						<span style="float:{vb:stylevar right}">{vb:rawphrase edit}</span>
+						{vb:rawphrase phpkd_vbbfp_blog_feed}
+					</th>
+					<th class="blocksubhead blocksubhead">
+						{vb:rawphrase phpkd_vbbfp_feed_blogtype}
+					</th>
+					<th class="blocksubhead blocksubhead">
+						{vb:rawphrase phpkd_vbbfp_feed_checked_every}
+					</th>
+					<th class="blocksubhead blocksubhead">
+						{vb:rawphrase display_order}
+					</th>
+					<th class="blocksubhead blocksubhead">
+						{vb:rawphrase phpkd_vbbfp_lastrun}
+					</th>
+					<th class="blocksubhead blocksubhead">
+						{vb:rawphrase phpkd_vbbfp_status}
+					</th>
+					<th class="blocksubhead blocksubhead">
+						{vb:rawphrase phpkd_vbbfp_moderation}
+					</th>
+					<vb:if condition="$show['canmassmanage'] OR $show['canmoderatefeeds']">
+						<vb:if condition="$show['canresetfeed']">
+							<th class="blocksubhead blocksubhead">
+								{vb:rawphrase phpkd_vbbfp_reset}
+							</th>
+						</vb:if>
+						<vb:if condition="$show['candeletefeed']">
+							<th class="blocksubhead blocksubhead">
+								{vb:rawphrase phpkd_vbbfp_delete}
+							</th>
+						</vb:if>
+						<!--
+						<vb:if condition="$show['canrunfeed']">
+							<th class="blocksubhead blocksubhead">
+								{vb:rawphrase phpkd_vbbfp_runnow}
+							</th>
+						</vb:if>
+						-->
+					</vb:if>
+				</tr>
+			</thead>
+			<vb:if condition="$feedbits">
+				<tbody>
+				{vb:raw feedbits}
+				</tbody>
+			<vb:else />
+				<tbody>
+					<tr class="blockrow">
+						<td colspan="4">
+							{vb:rawphrase phpkd_vbbfp_you_have_no_blog_feeds}
+						</td>
+					</tr>
+				</tbody>
+			</vb:if>
+		</table>
+	</div>
+	<div class="blockfoot actionbuttons">
+		<div class="group">
+			<vb:if condition="$feedbits"><input type="submit" name="display" class="button" value="{vb:rawphrase save_changes}" tabindex="1" />&nbsp;</vb:if>
+			<input type="submit" name="addfeed" class="button" value="{vb:rawphrase phpkd_vbbfp_blog_feed_add}"  tabindex="1" />
+		</div>
+	</div>
+
+	<input type="hidden" name="s" value="{vb:raw session.sessionhash}" />
+	<input type="hidden" name="securitytoken" value="{vb:raw bbuserinfo.securitytoken}" />
+	<input type="hidden" name="u" value="{vb:raw userinfo.userid}" />
+	<input type="hidden" name="do" value="updatefeed" />
+</form>
+
+<vb:if condition="$show['pagenav']">
+<div id="pagination_bottom">
+	{vb:raw pagenav}
+</div>
+</vb:if>]]></template>
+		<template name="phpkd_vbbfp_editfeeds_bits" templatetype="template" date="1340303331" username="PHPKD" version="4.2.100"><![CDATA[<tr class="blogcatbit">
+	<td><span style="float:{vb:stylevar right}"><a href="blog_phpkd_vbbfp.php?{vb:raw session.sessionurl}do=modifyfeed&amp;blogfeedid={vb:raw blogfeedid}"><img src="{vb:stylevar imgdir_misc}/blog/folder_edit.png" border="0" class="inlineimg" alt="{vb:rawphrase edit}" /></a></span><div><a href="blog_phpkd_vbbfp.php?{vb:raw session.sessionurl}do=modifyfeed&amp;blogfeedid={vb:raw blogfeedid}" title="{vb:raw feed.url}"><strong>{vb:raw feed.title}</strong></a></div><div class="smallfont"><a href="{vb:raw feed.url}" target="feed">{vb:raw parsedurl.host}</a></div></td>
+	<td class="bloglistinfo">{vb:raw blogtype}</td>
+	<td class="bloglistinfo">{vb:rawphrase phpkd_vbbfp_x_minutes, {vb:raw feed.checkedevery}}</td>
+	<td class="bloglistinfo"><input class="bginput" type="text" size="2" maxlength="3" name="displayorder[{vb:raw blogfeedid}]" value="{vb:raw feed.displayorder}" style="text-align: center" /></td>
+	<td class="bloglistinfo">{vb:raw datestring}</td>
+	<td class="bloglistinfo">
+		<vb:if condition="$show['canmassmanage'] OR $show['canmoderatefeeds']">
+			<label for="cb_enabled[{vb:raw blogfeedid}]"><input type="checkbox" name="enabled[{vb:raw blogfeedid}]" value="1" id="cb_enabled[{vb:raw blogfeedid}]" tabindex="12" {vb:raw feed.enabled} /> {vb:rawphrase phpkd_vbbfp_enabled}</label><input type="hidden" name="set_enabled[{vb:raw blogfeedid}]" value="1" />
+		<vb:else />
+			<vb:if condition="$feed['enabled']"><span style="color: #008000">{vb:rawphrase phpkd_vbbfp_enabled}</span><vb:else /><span style="color: #FF0000">{vb:rawphrase phpkd_vbbfp_disabled}</span></vb:if>
+		</vb:if>
+	</td>
+	<td class="bloglistinfo">
+		<vb:if condition="$show['canmassmanage'] OR $show['canmoderatefeeds']">
+			<label for="cb_approved[{vb:raw blogfeedid}]"><input type="checkbox" name="approved[{vb:raw blogfeedid}]" value="1" id="cb_approved[{vb:raw blogfeedid}]" tabindex="12" {vb:raw feed.approved} /> {vb:rawphrase phpkd_vbbfp_approved}</label><input type="hidden" name="set_approved[{vb:raw blogfeedid}]" value="1" />
+		<vb:else />
+			<vb:if condition="$feed['approved']"><span style="color: #008000">{vb:rawphrase phpkd_vbbfp_approved}</span><vb:else /><span style="color: #FF0000">{vb:rawphrase phpkd_vbbfp_disapproved}</span></vb:if>
+		</vb:if>
+	</td>
+	<vb:if condition="$show['canmassmanage'] OR $show['canmoderatefeeds']">
+		<vb:if condition="$show['canresetfeed']"><td class="bloglistinfo"><input type="checkbox" name="reset[{vb:raw blogfeedid}]" value="1" id="cb_reset[{vb:raw blogfeedid}]" tabindex="12" /><input type="hidden" name="set_reset[{vb:raw blogfeedid}]" value="1" /></td></vb:if>
+		<vb:if condition="$show['candeletefeed']"><td class="bloglistinfo"><input type="checkbox" name="delete[{vb:raw blogfeedid}]" value="1" id="cb_delete[{vb:raw blogfeedid}]" tabindex="12" /><input type="hidden" name="set_delete[{vb:raw blogfeedid}]" value="1" /></td></vb:if>
+		<!-- <vb:if condition="$show['canrunfeed']"><td class="bloglistinfo"><input type="checkbox" name="runnow[{vb:raw blogfeedid}]" value="1" id="cb_runnow[{vb:raw blogfeedid}]" tabindex="12" /><input type="hidden" name="set_runnow[{vb:raw blogfeedid}]" value="1" /></td></vb:if> -->
+	</vb:if>
+</tr>]]></template>
+		<template name="phpkd_vbbfp_modifyfeed" templatetype="template" date="1340306888" username="PHPKD" version="4.2.100"><![CDATA[<div id="pagetitle">
+	<h1>{vb:rawphrase phpkd_vbbfp_manage_blog_feed}</h1>
+</div>
+
+<form action="{vb:raw $vboptions.vbblog_url}{vb:if "$vboptions['vbblog_url']", '/', ''}blog_phpkd_vbbfp.php?do=addfeed" method="post" class="block">
+	<div class="blockbody formcontrols">
+		{vb:raw errorlist}
+
+		<vb:if condition="$feedinfo['blogfeedid']">
+		<input type="hidden" name="blogfeedid" value="{vb:raw feedinfo.blogfeedid}" />
+		<h3 class="blocksubhead">{vb:rawphrase phpkd_vbbfp_manage_blog_feed}</h3>
+		<div class="blockrow">
+		<vb:if condition="$show['canmoderatefeeds']">
+		<ul>
+			<li>
+				<span style="float: {vb:stylevar right}"><input type="submit" name="domoderate" value="<vb:if condition="$feedinfo['valid']">{vb:rawphrase phpkd_vbbfp_disapprove}<vb:else />{vb:rawphrase phpkd_vbbfp_approve}</vb:if>" class="button" style="width: 100px" accesskey="a" tabindex="1" /></span>
+				<label style="color: #FF0000" for="moderate"><vb:if condition="$feedinfo['valid']"><input type="checkbox" value="1" name="disapprove" id="moderate" /> {vb:rawphrase phpkd_vbbfp_to_disapprove_blog_feed_description}<vb:else /><input type="checkbox" value="1" name="approve" id="moderate" /> {vb:rawphrase phpkd_vbbfp_to_approve_blog_feed_description}</vb:if></label>
+			</li>
+		</ul>
+		</vb:if>
+		</div>
+		<div class="blockrow">
+		<vb:if condition="$show['canmoderatefeeds'] OR $show['candeletefeed']">
+		<ul>
+			<li>
+				<span style="float: {vb:stylevar right}"><input type="submit" name="dodelete" value="{vb:rawphrase delete}" class="button" style="width: 100px" accesskey="d" tabindex="1" /></span>
+				<label for="delete"><input type="checkbox" value="1" name="delete" id="delete" /> {vb:rawphrase phpkd_vbbfp_to_delete_blog_feed_description}</label>
+			</li>
+		</ul>
+		</vb:if>
+		</div>
+		<div class="blockrow">
+		<vb:if condition="$show['canmoderatefeeds'] OR $show['canresetfeed']">
+		<ul>
+			<li>
+				<span style="float: {vb:stylevar right}"><input type="submit" name="doreset" value="{vb:rawphrase phpkd_vbbfp_reset}" class="button" style="width: 100px" accesskey="t" tabindex="1" /></span>
+				<label for="reset"><input type="checkbox" value="1" name="reset" id="reset" /> {vb:rawphrase phpkd_vbbfp_to_reset_blog_feed_description}</label>
+			</li>
+		</ul>
+		</vb:if>
+		</div>
+		<!--
+		<div class="blockrow">
+			<vb:if condition="$show['canmoderatefeeds'] OR $show['canrunfeed']">
+			<ul>
+				<li>
+					<span style="float: {vb:stylevar right}"><input type="submit" name="dorunnow" value="{vb:rawphrase phpkd_vbbfp_runnow}" class="button" style="width: 100px" /></span>
+					<label for="runnow"><input type="checkbox" value="1" name="runnow" id="runnow" />{vb:rawphrase phpkd_vbbfp_to_runnow_blog_feed_description}</label>
+				</li>
+			</ul>
+			</vb:if>
+		</div>
+		-->
+		</vb:if>
+
+		<vb:if condition="$show['preview_bits']">
+		<h3 class="blocksubhead">{vb:rawphrase phpkd_vbbfp_preview}</h3>
+		<div class="blockrow">
+			{vb:raw preview_bits}
+		</div>
+		</vb:if>
+
+		<div class="blockrow">
+			<ul>
+				<li>{vb:rawphrase phpkd_vbbfp_feed_template_desc}</li>
+				<vb:if condition="$content_encoded"><li style="color: #0000FF; padding-top: 5px">{vb:rawphrase phpkd_vbbfp_feed_supports_content_encoded}</li></vb:if>
+			</ul>
+		</div>
+
+		<h3 class="blocksubhead"><vb:if condition="$feedinfo['blogfeedid']">{vb:rawphrase phpkd_vbbfp_blog_feed_edit} <span class="normal">{vb:raw feedinfo.realtitle}</span><vb:else />{vb:rawphrase phpkd_vbbfp_blog_feed_add}</vb:if></h3>
+		<div class="blockrow">
+			<label>{vb:rawphrase phpkd_vbbfp_feed_enabled}</label>
+			<ul class="checkradio group rightcol">
+				<li>
+					<label for="rb_1_feedoptions[enabled]_1"><input type="radio" name="feedoptions[enabled]" id="rb_1_feedoptions[enabled]_1" value="1" tabindex="1" <vb:if condition="$checked[enabled]">checked="checked"</vb:if> /> {vb:rawphrase yes}</label>
+					<label for="rb_0_feedoptions[enabled]_1"><input type="radio" name="feedoptions[enabled]" id="rb_0_feedoptions[enabled]_1" value="0" tabindex="2" <vb:if condition="!$checked[enabled]">checked="checked"</vb:if> /> {vb:rawphrase no}</label>
+				</li>
+			</ul>
+		</div>
+		<div class="blockrow">
+			<label for="feedinfo_url">{vb:rawphrase phpkd_vbbfp_feed_url}</label>
+			<div><input type="text" class="primary textbox" name="url" id="feedinfo_url" value="{vb:raw feedinfo.url}" tabindex="1" /></div>
+		</div>
+		<div class="blockrow">
+			<label for="feedinfo_title">{vb:rawphrase phpkd_vbbfp_feed_title}</label>
+			<div><input type="text" class="primary textbox" name="title" id="feedinfo_title" value="{vb:raw feedinfo.title}" tabindex="1" /></div>
+		</div>
+		<div class="blockrow">
+			<label for="feedinfo_description">{vb:rawphrase phpkd_vbbfp_feed_description}</label>
+			<div><input type="text" class="primary textbox" name="description" id="feedinfo_description" value="{vb:raw feedinfo.description}" tabindex="1" /></div>
+		</div>
+		<div class="blockrow">
+			<label for="feedinfo_displayorder">{vb:rawphrase phpkd_vbbfp_feed_displayorder}</label>
+			<div><input type="text" class="primary textbox" name="displayorder" id="feedinfo_displayorder" value="{vb:raw feedinfo.displayorder}" tabindex="1" /></div>
+		</div>
+		<div class="blockrow">
+			<label for="feedinfo_maxresults">{vb:rawphrase phpkd_vbbfp_feed_maxresults}</label>
+			<div><input type="text" class="primary textbox" name="maxresults" id="feedinfo_maxresults" value="{vb:raw feedinfo.maxresults}" tabindex="1" /></div>
+		</div>
+		<div class="blockrow">
+			<label for="feedinfo_titletemplate">{vb:rawphrase phpkd_vbbfp_feed_titletemplate}</label>
+			<div><input type="text" class="primary textbox" name="titletemplate" id="feedinfo_titletemplate" value="<vb:if condition="$feedinfo[titletemplate]">{vb:raw feedinfo.titletemplate}<vb:else />{feed:title}</vb:if>" tabindex="1" /></div>
+		</div>
+		<div class="blockrow">
+			<label for="feedinfo_bodytemplate">{vb:rawphrase phpkd_vbbfp_feed_bodytemplate}</label>
+			<div><textarea id="feedinfo_bodytemplate" name="bodytemplate" class="primary textbox" rows="3" cols="40" tabindex="1" wrap="virtual"><vb:if condition="$feedinfo[bodytemplate]">{vb:raw feedinfo.bodytemplate}<vb:else />{feed:description}
+
+[url={feed:link}]More...[/url]</vb:if></textarea></div>
+		</div>
+		<div class="blockrow">
+			<label for="feedinfo_blogtype">{vb:rawphrase phpkd_vbbfp_feed_maxresults}</label>
+			<div>
+				<select name="blogtype" id="feedinfo_blogtype" class="primary" tabindex="1">
+					<option value="visible" {vb:raw blogtype.visible}>{vb:rawphrase phpkd_vbbfp_visible}</option>
+					<option value="draft" {vb:raw blogtype.draft}>{vb:rawphrase phpkd_vbbfp_draft}</option>
+				</select>
+			</div>
+		</div>
+		<div class="blockrow">
+			<label for="feedinfo_ttl">{vb:rawphrase phpkd_vbbfp_feed_checked_every}</label>
+			<div>
+				<select name="ttl" id="feedinfo_ttl" class="primary" tabindex="1">
+					<option value="600" {vb:raw ttl.600}>{vb:rawphrase phpkd_vbbfp_x_minutes, 10}</option>
+					<option value="1200" {vb:raw ttl.1200}>{vb:rawphrase phpkd_vbbfp_x_minutes, 20}</option>
+					<option value="1800" {vb:raw ttl.1800}>{vb:rawphrase phpkd_vbbfp_x_minutes, 30}</option>
+					<option value="3600" {vb:raw ttl.3600}>{vb:rawphrase phpkd_vbbfp_x_minutes, 60}</option>
+					<option value="7200" {vb:raw ttl.7200}>{vb:rawphrase phpkd_vbbfp_x_hours, 2}</option>
+					<option value="14400" {vb:raw ttl.14400}>{vb:rawphrase phpkd_vbbfp_x_hours, 4}</option>
+					<option value="21600" {vb:raw ttl.21600}>{vb:rawphrase phpkd_vbbfp_x_hours, 6}</option>
+					<option value="28800" {vb:raw ttl.28800}>{vb:rawphrase phpkd_vbbfp_x_hours, 8}</option>
+					<option value="36000" {vb:raw ttl.36000}>{vb:rawphrase phpkd_vbbfp_x_hours, 10}</option>
+					<option value="43200" {vb:raw ttl.43200}>{vb:rawphrase phpkd_vbbfp_x_hours, 12}</option>
+				</select>
+			</div>
+		</div>
+
+		<h3 class="blocksubhead">{vb:rawphrase phpkd_vbbfp_blog_entry_options}</h3>
+		<div class="blockrow">
+			<label>{vb:rawphrase phpkd_vbbfp_main_options}</label>
+			<ul class="checkradio group rightcol">
+				<li class="floatcontainer">
+					<label for="cb_comments"><input type="checkbox" name="options[allowcomments]" value="1" id="cb_comments" tabindex="1" {vb:raw checked.allowcomments} /> {vb:rawphrase allow_comments_to_be_posted} <a href="faq.php?{vb:raw session.sessionurl}faq=vbblog_faq_reading_and_posting_options#faq_vbblog_faq_reading_and_posting_options_allow_comments" target="_blank">[?]</a></label>
+					<input type="hidden" name="set_options[allowcomments]" value="1" />
+				</li>
+				<vb:if condition="$show['moderatecomments']">
+				<li class="floatcontainer">
+					<label for="cb_moderate"><input type="checkbox" name="options[moderatecomments]" value="1" id="cb_moderate" tabindex="1" {vb:raw checked.moderatecomments} /> {vb:rawphrase moderate_comments_before_displaying} <a href="faq.php?{vb:raw session.sessionurl}faq=vbblog_faq_reading_and_posting_options#faq_vbblog_faq_reading_and_posting_options_moderate_comments" target="_blank">[?]</a></label>
+					<input type="hidden" name="set_options[moderatecomments]" value="1" />
+				</li>
+				</vb:if>
+				<vb:if condition="$show['pingback'] OR $show['trackback']">
+				<li class="floatcontainer">
+					<label for="cb_pingback"><input type="checkbox" name="options[allowpingback]" value="1" id="cb_pingback" {vb:raw checked.allowpingback} tabindex="1" /> <vb:if condition="!$show['pingback']">{vb:rawphrase allow_trackback}<vb:elseif condition="!$show['trackback']" />{vb:rawphrase allow_pingback}<vb:else />{vb:rawphrase allow_trackback_pingback}</vb:if> <a href="faq.php?{vb:raw session.sessionurl}faq=vbblog_faq_reading_and_posting_options#faq_vbblog_faq_reading_and_posting_options_pingback" target="_blank">[?]</a></label>
+					<input type="hidden" name="set_options[allowpingback]" value="1" />
+				</li>
+				</vb:if>
+				<vb:if condition="$show['notify']">
+				<li class="floatcontainer">
+					<label for="cb_notify"><input type="checkbox" name="options[notify]" value="1" id="cb_notify" tabindex="1" {vb:raw checked.notify} /> {vb:rawphrase notify_linked_blogs} <a href="faq.php?{vb:raw session.sessionurl}faq=vbblog_faq_reading_and_posting_options#faq_vbblog_faq_reading_and_posting_options_notify" target="_blank">[?]</a></label>
+					<input type="hidden" name="set_options[notify]" value="1" />
+				</li>
+				</vb:if>
+				<li class="floatcontainer">
+					<label for="cb_private"><input type="checkbox" name="options[private]" value="1" id="cb_private" tabindex="1" {vb:raw checked.private} /> {vb:rawphrase restrict_entry_viewing_to_contacts} <a href="faq.php?{vb:raw session.sessionurl}faq=vbblog_faq_reading_and_posting_options#faq_vbblog_faq_reading_and_posting_options_private" target="_blank">[?]</a></label>
+					<input type="hidden" name="set_options[private]" value="1" />
+				</li>
+			</ul>
+		</div>
+		<div class="blockrow">
+			<label>{vb:rawphrase miscellaneous_options}</label>
+			<ul class="checkradio group rightcol">
+				<li><label for="cb_allowsmilies"><input type="checkbox" name="options[allowsmilies]" id="cb_allowsmilies" {vb:raw checked.allowsmilies} value="1" tabindex="1" /> {vb:rawphrase phpkd_vbbfp_feed_allowsmilies}</label><input type="hidden" name="set_options[allowsmilies]" value="1" /></li>
+				<li><label for="cb_html2bbcode"><input type="checkbox" name="options[html2bbcode]" id="cb_html2bbcode" {vb:raw checked.html2bbcode} value="1" tabindex="1" /> {vb:rawphrase phpkd_vbbfp_feed_html2bbcode}</label><input type="hidden" name="set_options[html2bbcode]" value="1" /></li>
+				<vb:if condition="$show['parseurl']"><li><label for="cb_parseurl"><input type="checkbox" name="options[parseurl]" id="cb_parseurl" {vb:raw checked.parseurl} value="1" tabindex="1" /> {vb:rawphrase phpkd_vbbfp_automatically_parse_links_in_text}</label><input type="hidden" name="set_options[parseurl]" value="1" /></li></vb:if>
+				<li><label for="cb_origdateline"><input type="checkbox" name="options[origdateline]" id="cb_origdateline" {vb:raw checked.origdateline} value="1" tabindex="1" /> {vb:rawphrase phpkd_vbbfp_feed_origdateline}</label><input type="hidden" name="set_options[origdateline]" value="1" /></li>
+			</ul>
+			<input type="hidden" name="set_options[options_ignore_canviewmyblog]" value="1" />
+			<input type="hidden" name="set_options[options_ignore_cancommentmyblog]" value="1" />
+		</div>
+		<div class="blockrow">
+			<label for="emailupdate">{vb:rawphrase blog_entry_subscription_type}</label>
+			<select name="emailupdate" id="emailupdate" tabindex="1">
+				<option value="none" {vb:raw emailupdate.none}>{vb:rawphrase phpkd_vbbfp_do_not_subscribe}</option>
+				<option value="usercp" {vb:raw emailupdate.usercp}>{vb:rawphrase no_email_notification}</option>
+				<option value="email" {vb:raw emailupdate.email}>{vb:rawphrase instant_email_notification}</option>
+			</select>
+		</div>
+	</div>
+	<div class="blockfoot actionbuttons">
+		<div class="group">
+			<input type="submit" class="button" value="{vb:rawphrase save_changes}" accesskey="s" tabindex="1" />
+			<input type="submit" name="dopreview" class="button" value="{vb:rawphrase phpkd_vbbfp_preview}" accesskey="p" />
+			<input type="reset" class="button" value="{vb:rawphrase reset_fields}" accesskey="r" tabindex="1" />
+		</div>
+	</div>
+
+	<input type="hidden" name="s" value="{vb:raw session.dbsessionhash}" />
+	<input type="hidden" name="securitytoken" value="{vb:raw bbuserinfo.securitytoken}" />
+	<input type="hidden" name="do" value="addfeed" />
+	<input type="hidden" name="u" value="{vb:raw userinfo.userid}" />
+</form>]]></template>
+		<template name="phpkd_vbbfp_preview_bits" templatetype="template" date="1340296011" username="PHPKD" version="4.2.100"><![CDATA[<div style="border: inset 1px; padding: 5px; height: 175px; margin: 10px; overflow: auto;"><h3><em>{vb:raw title}</em></h3>{vb:raw body}</div>]]></template>
+	</templates>
+	<stylevardfns>
+	</stylevardfns>
+	<stylevars>
+	</stylevars>
+	<plugins>
+		<plugin active="1" executionorder="5">
+			<title><![CDATA[PHPKD - vB Blog Feed Poster - [ AdminCP Main Stats ]]]></title>
+			<hookname>admin_index_main1</hookname>
+			<phpcode><![CDATA[$phpkd_vbbfp_ttfeeds = $db->query_first("SELECT COUNT(*) AS ttfeeds FROM " . TABLE_PREFIX . "phpkd_vbbfp");
+$phpkd_vbbfp_tdfeeds = $db->query_first("SELECT COUNT(*) AS tdfeeds FROM " . TABLE_PREFIX . "phpkd_vbbfp WHERE dateline >= $starttime");
+$phpkd_vbbfp_alfeeds = $db->query_first("SELECT COUNT(*) AS alfeeds FROM " . TABLE_PREFIX . "phpkd_vbbfp WHERE valid = 1");
+$phpkd_vbbfp_mdfeeds = $db->query_first("SELECT COUNT(*) AS mdfeeds FROM " . TABLE_PREFIX . "phpkd_vbbfp WHERE valid = 0");
+$phpkd_vbbfp_acfeeds = $db->query_first("SELECT COUNT(*) AS acfeeds FROM " . TABLE_PREFIX . "phpkd_vbbfp WHERE (feedoptions & " . $vbulletin->bf_misc_phpkd_vbbfp2['enabled'] . ")");
+$phpkd_vbbfp_dsfeeds = $db->query_first("SELECT COUNT(*) AS dsfeeds FROM " . TABLE_PREFIX . "phpkd_vbbfp WHERE NOT (feedoptions & " . $vbulletin->bf_misc_phpkd_vbbfp2['enabled'] . ")");
+$phpkd_vbbfp_usfeeds = $db->query_first("SELECT COUNT(*) AS usfeeds FROM " . TABLE_PREFIX . "phpkd_vbbfp GROUP BY userid");
+$phpkd_vbbfp_rtfeeds = $db->query_first("SELECT COUNT(*) AS rtfeeds FROM " . TABLE_PREFIX . "phpkd_vbbfp WHERE lastrun >= $starttime");
+$phpkd_vbbfp_afentries = $db->query_first("SELECT COUNT(*) AS afentries FROM " . TABLE_PREFIX . "blog WHERE phpkd_vbbfp > 0");
+$phpkd_vbbfp_ptentries = $db->query_first("SELECT COUNT(*) AS ptentries FROM " . TABLE_PREFIX . "blog WHERE phpkd_vbbfp > 0 AND phpkd_vbbfp_dateline >= $starttime");
+
+
+print_form_header('index', 'home');
+print_table_header($vbphrase['phpkd_vbbfp_admincp'], 4);
+print_cells_row(array($vbphrase['phpkd_vbbfp_admincp_ttfeeds'], vb_number_format($phpkd_vbbfp_ttfeeds['ttfeeds']) . ' ' . construct_link_code($vbphrase['view'], '../' . $vbulletin->config['Misc']['modcpdir'] . '/blog_phpkd_vbbfp.php?' . $vbulletin->session->vars['sessionurl'] . "do=feeds&filter=ttfeeds"), $vbphrase['phpkd_vbbfp_admincp_tdfeeds'], vb_number_format($phpkd_vbbfp_tdfeeds['tdfeeds']) . ' ' . construct_link_code($vbphrase['view'], '../' . $vbulletin->config['Misc']['modcpdir'] . '/blog_phpkd_vbbfp.php?' . $vbulletin->session->vars['sessionurl'] . "do=feeds&filter=tdfeeds")), 0, 0, -5, 'top', 1, 1);
+print_cells_row(array($vbphrase['phpkd_vbbfp_admincp_alfeeds'], vb_number_format($phpkd_vbbfp_alfeeds['alfeeds']) . ' ' . construct_link_code($vbphrase['view'], '../' . $vbulletin->config['Misc']['modcpdir'] . '/blog_phpkd_vbbfp.php?' . $vbulletin->session->vars['sessionurl'] . "do=feeds&filter=alfeeds"), $vbphrase['phpkd_vbbfp_admincp_mdfeeds'], vb_number_format($phpkd_vbbfp_mdfeeds['mdfeeds']) . ' ' . construct_link_code($vbphrase['view'], '../' . $vbulletin->config['Misc']['modcpdir'] . '/blog_phpkd_vbbfp.php?' . $vbulletin->session->vars['sessionurl'] . "do=feeds&filter=mdfeeds")), 0, 0, -5, 'top', 1, 1);
+print_cells_row(array($vbphrase['phpkd_vbbfp_admincp_acfeeds'], vb_number_format($phpkd_vbbfp_acfeeds['acfeeds']) . ' ' . construct_link_code($vbphrase['view'], '../' . $vbulletin->config['Misc']['modcpdir'] . '/blog_phpkd_vbbfp.php?' . $vbulletin->session->vars['sessionurl'] . "do=feeds&filter=acfeeds"), $vbphrase['phpkd_vbbfp_admincp_dsfeeds'], vb_number_format($phpkd_vbbfp_dsfeeds['dsfeeds']) . ' ' . construct_link_code($vbphrase['view'], '../' . $vbulletin->config['Misc']['modcpdir'] . '/blog_phpkd_vbbfp.php?' . $vbulletin->session->vars['sessionurl'] . "do=feeds&filter=dsfeeds")), 0, 0, -5, 'top', 1, 1);
+print_cells_row(array($vbphrase['phpkd_vbbfp_admincp_usfeeds'], vb_number_format($phpkd_vbbfp_usfeeds['usfeeds']) . ' ' . construct_link_code($vbphrase['view'], '../' . $vbulletin->config['Misc']['modcpdir'] . '/blog_phpkd_vbbfp.php?' . $vbulletin->session->vars['sessionurl'] . "do=feeds&filter=ttfeeds"), $vbphrase['phpkd_vbbfp_admincp_rtfeeds'], vb_number_format($phpkd_vbbfp_rtfeeds['rtfeeds']) . ' ' . construct_link_code($vbphrase['view'], '../' . $vbulletin->config['Misc']['modcpdir'] . '/blog_phpkd_vbbfp.php?' . $vbulletin->session->vars['sessionurl'] . "do=feeds&filter=rtfeeds")), 0, 0, -5, 'top', 1, 1);
+print_cells_row(array($vbphrase['phpkd_vbbfp_admincp_afentries'], vb_number_format($phpkd_vbbfp_afentries['afentries']), $vbphrase['phpkd_vbbfp_admincp_ptentries'], vb_number_format($phpkd_vbbfp_ptentries['ptentries'])), 0, 0, -5, 'top', 1, 1);
+print_table_footer();]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title><![CDATA[PHPKD - vB Blog Feed Poster - [ Cache Required Templates ]]]></title>
+			<hookname>cache_templates</hookname>
+			<phpcode><![CDATA[if (($vbulletin->userinfo['permissions']['phpkd_vbbfp_perms'] & $vbulletin->bf_ugp_phpkd_vbbfp_perms['cancreate']) AND defined('VBBLOG_SCRIPT'))
+{
+	$cache[] = 'phpkd_vbbfp_blog_sidebar';
+}]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title><![CDATA[PHPKD - vB Blog Feed Poster - [ ModCP Navigation ]]]></title>
+			<hookname>mod_index_navigation</hookname>
+			<phpcode><![CDATA[if (!function_exists('can_moderate_blog'))
+{
+	require_once(DIR . '/includes/blog_functions_shared.php');
+}
+
+if (can_moderate_blog('phpkd_vbbfp_canedit') OR ($vbulletin->userinfo['permissions']['adminpermissions'] & $vbulletin->bf_ugp_adminpermissions['cancontrolpanel']))
+{
+	construct_nav_option($vbphrase['phpkd_vbbfp_moderate_feeds'], 'blog_phpkd_vbbfp.php?do=feeds');
+	construct_nav_group($vbphrase['phpkd_vbbfp_moderate_feeds']);
+	construct_nav_spacer();
+}]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title><![CDATA[PHPKD - vB Blog Feed Poster - [ Template Replacements ]]]></title>
+			<hookname>parse_templates</hookname>
+			<phpcode><![CDATA[if (($vbulletin->userinfo['permissions']['phpkd_vbbfp_perms'] & $vbulletin->bf_ugp_phpkd_vbbfp_perms['cancreate']) AND defined('VBBLOG_SCRIPT'))
+{
+	$templater = vB_Template::create('phpkd_vbbfp_blog_sidebar');
+	$vbulletin->templatecache['BLOG'] = str_replace('vB_Template_Runtime::parsePhrase("blog_entry_subscriptions") . \'</a>', 'vB_Template_Runtime::parsePhrase("blog_entry_subscriptions") . \'</a>' . $templater->render(), $vbulletin->templatecache['BLOG']);
+}]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title><![CDATA[PHPKD - vB Blog Feed Poster - [ Group Templates ]]]></title>
+			<hookname>template_groups</hookname>
+			<phpcode><![CDATA[$only['phpkd_vbbfp'] = $vbphrase['phpkd_vbbfp'];]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title><![CDATA[PHPKD - vB Blog Feed Poster - [ Edit Feeds Link in AdminCP User's Profile ]]]></title>
+			<hookname>useradmin_edit_start</hookname>
+			<phpcode><![CDATA[if ($vbulletin->GPC['userid'])
+{
+	$quicklinks['../' . $vbulletin->config['Misc']['modcpdir'] . '/blog_phpkd_vbbfp.php?' . $vbulletin->session->vars['sessionurl'] . 'do=feeds&filter=all&u=' . $vbulletin->GPC['userid']] = $vbphrase['phpkd_vbbfp_blog_feeds_edit'];
+}]]></phpcode>
+		</plugin>
+	</plugins>
+	<phrases>
+		<phrasetype name="Control Panel Global" fieldname="cpglobal">
+			<phrase name="phpkd_vbbfp_admincp" date="1252567341" username="PHPKD" version="4.2.100"><![CDATA[PHPKD - vB Blog Feed Poster]]></phrase>
+			<phrase name="phpkd_vbbfp_admincp_acfeeds" date="1252569030" username="PHPKD" version="4.2.100"><![CDATA[Active Feeds Count]]></phrase>
+			<phrase name="phpkd_vbbfp_admincp_afentries" date="1252569390" username="PHPKD" version="4.2.100"><![CDATA[Blog Entries Posted through Feeds]]></phrase>
+			<phrase name="phpkd_vbbfp_admincp_alfeeds" date="1252568667" username="PHPKD" version="4.2.100"><![CDATA[Approved Feeds Count]]></phrase>
+			<phrase name="phpkd_vbbfp_admincp_dsfeeds" date="1252569078" username="PHPKD" version="4.2.100"><![CDATA[Inactive Feeds Count]]></phrase>
+			<phrase name="phpkd_vbbfp_admincp_mdfeeds" date="1252568522" username="PHPKD" version="4.2.100"><![CDATA[Feeds to Moderate]]></phrase>
+			<phrase name="phpkd_vbbfp_admincp_ptentries" date="1252569418" username="PHPKD" version="4.2.100"><![CDATA[Blog Entries Posted through Feeds Today]]></phrase>
+			<phrase name="phpkd_vbbfp_admincp_rtfeeds" date="1252569252" username="PHPKD" version="4.2.100"><![CDATA[Feeds Run Today]]></phrase>
+			<phrase name="phpkd_vbbfp_admincp_tdfeeds" date="1252567830" username="PHPKD" version="4.2.100"><![CDATA[New Feeds Today]]></phrase>
+			<phrase name="phpkd_vbbfp_admincp_ttfeeds" date="1252567869" username="PHPKD" version="4.2.100"><![CDATA[Total Feeds Count]]></phrase>
+			<phrase name="phpkd_vbbfp_admincp_usfeeds" date="1252569131" username="PHPKD" version="4.2.100"><![CDATA[Users have Feeds]]></phrase>
+		</phrasetype>
+		<phrasetype name="Control Panel Home Pages" fieldname="cphome">
+			<phrase name="phpkd_vbbfp_feeds" date="1252648744" username="PHPKD" version="4.2.100"><![CDATA[Blog Feeds]]></phrase>
+			<phrase name="phpkd_vbbfp_moderate_feeds" date="1252649053" username="PHPKD" version="4.2.100"><![CDATA[Moderate Blog Feeds]]></phrase>
+		</phrasetype>
+		<phrasetype name="Permissions" fieldname="cppermission">
+			<phrase name="phpkd_vbbfp_cancreate" date="1340127747" username="PHPKD" version="4.2.100"><![CDATA[Can Create Own Blog Feeds]]></phrase>
+			<phrase name="phpkd_vbbfp_candelete" date="1252382399" username="PHPKD" version="4.2.100"><![CDATA[Can Delete Own Feeds]]></phrase>
+			<phrase name="phpkd_vbbfp_caneditfeeds" date="1252383379" username="PHPKD" version="4.2.100"><![CDATA[Can Edit Blog Feeds]]></phrase>
+			<phrase name="phpkd_vbbfp_canmassmanage" date="1252382231" username="PHPKD" version="4.2.100"><![CDATA[Can Mass Manage Feeds]]></phrase>
+			<phrase name="phpkd_vbbfp_canmoderate" date="1340128065" username="PHPKD" version="4.2.100"><![CDATA[Moderate Feeds By Default<dfn>(New feeds should be approved by administration first before begin working.)</dfn>]]></phrase>
+			<phrase name="phpkd_vbbfp_canreset" date="1252382434" username="PHPKD" version="4.2.100"><![CDATA[Can Reset Feed's Last Run Time]]></phrase>
+			<phrase name="phpkd_vbbfp_canrunnow" date="1252382359" username="PHPKD" version="4.2.100"><![CDATA[Can force feeds to run now (In Real Time)<dfn>(By default All feeds run automatically through "Scheduled Tasks")</dfn>]]></phrase>
+			<phrase name="phpkd_vbbfp_maxfeeds" date="1252382474" username="PHPKD" version="4.2.100"><![CDATA[Maximum Feeds Allowed]]></phrase>
+			<phrase name="phpkd_vbbfp_moderatefeeds" date="1340128275" username="PHPKD" version="4.2.100"><![CDATA[Moderate Feeds By Default<dfn>(New feeds should be approved by administration first before begin working.)</dfn>]]></phrase>
+			<phrase name="phpkd_vbbfp_perms" date="1252406658" username="PHPKD" version="4.2.100"><![CDATA[PHPKD - vB Blog Feed Poster]]></phrase>
+		</phrasetype>
+		<phrasetype name="Scheduled Tasks" fieldname="cron">
+			<phrase name="task_phpkd_vbbfp_desc" date="1252056460" username="PHPKD" version="4.2.100"><![CDATA[This script reads Blog Feeds (RSS/Atom) from the internet and inserts fetched items into your board as blog entries.]]></phrase>
+			<phrase name="task_phpkd_vbbfp_log" date="1252056460" username="PHPKD" version="4.2.100"><![CDATA[Inserted the following: {1}]]></phrase>
+			<phrase name="task_phpkd_vbbfp_title" date="1252056460" username="PHPKD" version="4.2.100"><![CDATA[PHPKD - vB Blog Feed Poster]]></phrase>
+		</phrasetype>
+		<phrasetype name="Error Messages" fieldname="error">
+			<phrase name="phpkd_vbbfp_blog_feed_limit" date="1252104659" username="PHPKD" version="4.2.100"><![CDATA[You are only permitted to have {1} Blog Feeds.]]></phrase>
+			<phrase name="phpkd_vbbfp_invalid_feed_specified" date="1251552670" username="PHPKD" version="4.2.100"><![CDATA[Invalid Feed Specified]]></phrase>
+			<phrase name="phpkd_vbbfp_saved_feeds_successfully" date="1252565188" username="PHPKD" version="4.2.100"><![CDATA[Saved Feeds Successfully.]]></phrase>
+		</phrasetype>
+		<phrasetype name="Style Tools" fieldname="style">
+			<phrase name="phpkd_vbbfp" date="1251539571" username="PHPKD" version="4.2.100"><![CDATA[PHPKD - vB Blog Feed Poster]]></phrase>
+		</phrasetype>
+		<phrasetype name="User Tools (global)" fieldname="user">
+			<phrase name="phpkd_vbbfp_blog_feeds_edit" date="1252160336" username="PHPKD" version="4.2.100"><![CDATA[Edit Blog Feeds]]></phrase>
+		</phrasetype>
+		<phrasetype name="vBulletin Blog Global" fieldname="vbblogglobal">
+			<phrase name="phpkd_vbbfp_approve" date="1252385379" username="PHPKD" version="4.2.100"><![CDATA[Approve]]></phrase>
+			<phrase name="phpkd_vbbfp_approved" date="1252412332" username="PHPKD" version="4.2.100"><![CDATA[Approved]]></phrase>
+			<phrase name="phpkd_vbbfp_automatically_parse_links_in_text" date="1251838123" username="PHPKD" version="4.2.100"><![CDATA[Automatically parse links in text]]></phrase>
+			<phrase name="phpkd_vbbfp_blog_entry_options" date="1251695447" username="PHPKD" version="4.2.100"><![CDATA[Blog Entry Options]]></phrase>
+			<phrase name="phpkd_vbbfp_blog_feed" date="1251871372" username="PHPKD" version="4.2.100"><![CDATA[Feed]]></phrase>
+			<phrase name="phpkd_vbbfp_blog_feed_add" date="1252152941" username="PHPKD" version="4.2.100"><![CDATA[Add New Blog Feed]]></phrase>
+			<phrase name="phpkd_vbbfp_blog_feed_edit" date="1252152964" username="PHPKD" version="4.2.100"><![CDATA[Edit Blog Feed]]></phrase>
+			<phrase name="phpkd_vbbfp_blog_feeds" date="1251538387" username="PHPKD" version="4.2.100"><![CDATA[Blog Feeds]]></phrase>
+			<phrase name="phpkd_vbbfp_blog_nfeeds" date="1251871228" username="PHPKD" version="4.2.100"><![CDATA[Feeds]]></phrase>
+			<phrase name="phpkd_vbbfp_delete" date="1252412474" username="PHPKD" version="4.2.100"><![CDATA[Delete]]></phrase>
+			<phrase name="phpkd_vbbfp_disabled" date="1252412314" username="PHPKD" version="4.2.100"><![CDATA[Disabled]]></phrase>
+			<phrase name="phpkd_vbbfp_disapprove" date="1252385368" username="PHPKD" version="4.2.100"><![CDATA[Disapprove]]></phrase>
+			<phrase name="phpkd_vbbfp_disapproved" date="1252412344" username="PHPKD" version="4.2.100"><![CDATA[Disapproved]]></phrase>
+			<phrase name="phpkd_vbbfp_do_not_subscribe" date="1251838627" username="PHPKD" version="4.2.100"><![CDATA[Do not subscribe]]></phrase>
+			<phrase name="phpkd_vbbfp_draft" date="1251870735" username="PHPKD" version="4.2.100"><![CDATA[Draft]]></phrase>
+			<phrase name="phpkd_vbbfp_enabled" date="1252412299" username="PHPKD" version="4.2.100"><![CDATA[Enabled]]></phrase>
+			<phrase name="phpkd_vbbfp_feed_allowsmilies" date="1251694759" username="PHPKD" version="4.2.100"><![CDATA[Allow Smilies]]></phrase>
+			<phrase name="phpkd_vbbfp_feed_blogtype" date="1252009724" username="PHPKD" version="4.2.100"><![CDATA[Blog Entry Type]]></phrase>
+			<phrase name="phpkd_vbbfp_feed_bodytemplate" date="1251865543" username="PHPKD" version="4.2.100"><![CDATA[Body Template]]></phrase>
+			<phrase name="phpkd_vbbfp_feed_checked_every" date="1251695083" username="PHPKD" version="4.2.100"><![CDATA[Check Feed Every]]></phrase>
+			<phrase name="phpkd_vbbfp_feed_description" date="1340289778" username="PHPKD" version="4.2.100"><![CDATA[Feed Description]]></phrase>
+			<phrase name="phpkd_vbbfp_feed_displayorder" date="1251861995" username="PHPKD" version="4.2.100"><![CDATA[Display Order]]></phrase>
+			<phrase name="phpkd_vbbfp_feed_enabled" date="1340288293" username="PHPKD" version="4.2.100"><![CDATA[Feed is Enabled]]></phrase>
+			<phrase name="phpkd_vbbfp_feed_html2bbcode" date="1251695102" username="PHPKD" version="4.2.100"><![CDATA[Convert HTML to BB Code]]></phrase>
+			<phrase name="phpkd_vbbfp_feed_maxresults" date="1251695053" username="PHPKD" version="4.2.100"><![CDATA[Maximum Items to Fetch]]></phrase>
+			<phrase name="phpkd_vbbfp_feed_origdateline" date="1251970810" username="PHPKD" version="4.2.100"><![CDATA[Publish blog entries with their original publish date]]></phrase>
+			<phrase name="phpkd_vbbfp_feed_supports_content_encoded" date="1340300279" username="PHPKD" version="4.2.100"><![CDATA[This feed supports <em>content:encoded</em>. Your imported feeds may appear nicer if you use <span style="font-weight: bold">{feed:content:encoded}</span> in your "Body Template" instead of <span style="font-weight: bold">{feed:description}</span> and enable the "<span style="font-style: italic">Convert HTML to BB Code</span>" option.]]></phrase>
+			<phrase name="phpkd_vbbfp_feed_template_desc" date="1340300195" username="PHPKD" version="4.2.100"><![CDATA[The two templates ("<span style="font-weight: bold">Title Template</span>", "<span style="font-weight: bold">Body Template</span>") are used for the title (title template) and body (body template) of messages posted by the "Feed Poster".<br />
+You can specify exactly how these items appear and any item from a feed can be inserted by using {feed:fieldname} where 'fieldname' corresponds to one of the following: title, description, link, id, date, enclosure_href and content:encoded.]]></phrase>
+			<phrase name="phpkd_vbbfp_feed_title" date="1251693735" username="PHPKD" version="4.2.100"><![CDATA[Feed Title]]></phrase>
+			<phrase name="phpkd_vbbfp_feed_titletemplate" date="1251865566" username="PHPKD" version="4.2.100"><![CDATA[Title Template]]></phrase>
+			<phrase name="phpkd_vbbfp_feed_url" date="1251693721" username="PHPKD" version="4.2.100"><![CDATA[URL of Feed]]></phrase>
+			<phrase name="phpkd_vbbfp_feeds_moderation" date="1252558366" username="PHPKD" version="4.2.100"><![CDATA[PHPKD - vB Blog Feed Poster Moderation]]></phrase>
+			<phrase name="phpkd_vbbfp_lastrun" date="1251872787" username="PHPKD" version="4.2.100"><![CDATA[Last Run]]></phrase>
+			<phrase name="phpkd_vbbfp_main_options" date="1251693111" username="PHPKD" version="4.2.100"><![CDATA[Main Options]]></phrase>
+			<phrase name="phpkd_vbbfp_manage_blog_feed" date="1252383510" username="PHPKD" version="4.2.100"><![CDATA[Manage Blog Feed]]></phrase>
+			<phrase name="phpkd_vbbfp_moderation" date="1252412455" username="PHPKD" version="4.2.100"><![CDATA[Moderation]]></phrase>
+			<phrase name="phpkd_vbbfp_no_feeds_found" date="1252563489" username="PHPKD" version="4.2.100"><![CDATA[Sorry, no feeds found.]]></phrase>
+			<phrase name="phpkd_vbbfp_notes" date="1251562853" username="PHPKD" version="4.2.100"><![CDATA[Notes]]></phrase>
+			<phrase name="phpkd_vbbfp_preview" date="1251562936" username="PHPKD" version="4.2.100"><![CDATA[Preview]]></phrase>
+			<phrase name="phpkd_vbbfp_reset" date="1252385604" username="PHPKD" version="4.2.100"><![CDATA[Reset]]></phrase>
+			<phrase name="phpkd_vbbfp_runnow" date="1252385587" username="PHPKD" version="4.2.100"><![CDATA[Run Now]]></phrase>
+			<phrase name="phpkd_vbbfp_status" date="1252412439" username="PHPKD" version="4.2.100"><![CDATA[Status]]></phrase>
+			<phrase name="phpkd_vbbfp_to_approve_blog_feed_description" date="1252387271" username="PHPKD" version="4.2.100"><![CDATA[To Approve this feed, check this box and press the 'Approve' button. ]]></phrase>
+			<phrase name="phpkd_vbbfp_to_delete_blog_feed_description" date="1252385291" username="PHPKD" version="4.2.100"><![CDATA[To Delete this feed, check this box and press the 'Delete' button. ]]></phrase>
+			<phrase name="phpkd_vbbfp_to_disapprove_blog_feed_description" date="1252385260" username="PHPKD" version="4.2.100"><![CDATA[To Disapprove this feed, check this box and press the 'Disapprove' button. ]]></phrase>
+			<phrase name="phpkd_vbbfp_to_reset_blog_feed_description" date="1252385677" username="PHPKD" version="4.2.100"><![CDATA[To Reset this feed's last run time, check this box and press the 'Reset' button. ]]></phrase>
+			<phrase name="phpkd_vbbfp_to_runnow_blog_feed_description" date="1252385313" username="PHPKD" version="4.2.100"><![CDATA[To Run this feed now, check this box and press the 'Run Now' button. ]]></phrase>
+			<phrase name="phpkd_vbbfp_visible" date="1251870746" username="PHPKD" version="4.2.100"><![CDATA[Visible]]></phrase>
+			<phrase name="phpkd_vbbfp_x_hours" date="1251694033" username="PHPKD" version="4.2.100"><![CDATA[{1} Hours]]></phrase>
+			<phrase name="phpkd_vbbfp_x_minutes" date="1251694022" username="PHPKD" version="4.2.100"><![CDATA[{1} Minutes]]></phrase>
+			<phrase name="phpkd_vbbfp_you_have_no_blog_feeds" date="1251871735" username="PHPKD" version="4.2.100"><![CDATA[You have no blog feeds]]></phrase>
+		</phrasetype>
+	</phrases>
+	<options>
+	</options>
+	<helptopics>
+	</helptopics>
+	<cronentries>
+		<cron varname="phpkd_vbbfp" active="1" loglevel="1">
+			<filename>./includes/cron/blog_phpkd_vbbfp.php</filename>
+			<scheduling weekday="-1" day="-1" hour="-1" minute="0,10,20,30,40,50" />
+		</cron>
+	</cronentries>
+	<faqentries>
+	</faqentries>
+	<navigation>
+	</navigation>
+</product>

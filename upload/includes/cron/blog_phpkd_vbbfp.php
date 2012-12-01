@@ -16,7 +16,7 @@ require_once(DIR . '/includes/blog_functions_post.php');
 require_once(DIR . '/includes/blog_functions_shared.php');
 require_once(DIR . '/includes/functions_newpost.php');
 require_once(DIR . '/includes/class_rss_poster.php');
-require_once(DIR . '/includes/functions_wysiwyg.php');
+require_once(DIR . '/includes/class_wysiwygparser.php');
 
 
 if (($current_memory_limit = ini_size_to_bytes(@ini_get('memory_limit'))) < 128 * 1024 * 1024 AND $current_memory_limit > 0)
@@ -33,9 +33,9 @@ define('VBBLOG_PERMS', true);
 
 $feeds_result = $vbulletin->db->query_read("
 	SELECT feed.*, feed.options AS foptions, user.*
-	FROM " . TABLE_PREFIX . "ssgtiblogfeedposter AS feed
+	FROM " . TABLE_PREFIX . "phpkd_vbbfp AS feed
 	INNER JOIN " . TABLE_PREFIX . "user AS user ON (user.userid = feed.userid)
-	WHERE feed.feedoptions & " . $vbulletin->bf_misc_ssgtiblogfeedposter2['enabled'] . "
+	WHERE feed.feedoptions & " . $vbulletin->bf_misc_phpkd_vbbfp2['enabled'] . "
 ");
 while ($feed = $vbulletin->db->fetch_array($feeds_result))
 {
@@ -72,7 +72,7 @@ if (!empty($feeds))
 	$feedcount = 0;
 	$itemstemp = array();
 
-	($hook = vBulletinHook::fetch_hook('blog_ssgti_feedposter_cron_start')) ? eval($hook) : false;
+	($hook = vBulletinHook::fetch_hook('blog_phpkd_vbbfp_cron_start')) ? eval($hook) : false;
 
 
 	foreach (array_keys($feeds) AS $blogfeedid)
@@ -98,7 +98,7 @@ if (!empty($feeds))
 			continue;
 		}
 
-		($hook = vBulletinHook::fetch_hook('blog_ssgti_feedposter_cron_feed')) ? eval($hook) : false;
+		($hook = vBulletinHook::fetch_hook('blog_phpkd_vbbfp_cron_feed')) ? eval($hook) : false;
 
 
 		foreach ($feed['xml']->fetch_items() AS $item)
@@ -177,7 +177,7 @@ if (!empty($feeds))
 			if (++$feedcount % 10 == 0 AND !empty($itemstemp))
 			{
 				$feedlogs_result = $vbulletin->db->query_read("
-					SELECT * FROM " . TABLE_PREFIX . "ssgtiblogfeedposter_log
+					SELECT * FROM " . TABLE_PREFIX . "phpkd_vbbfp_log
 					WHERE uniquehash IN ('" . implode("', '", array_map(array(&$vbulletin->db, 'escape_string'), array_keys($itemstemp))) . "')
 				");
 
@@ -192,7 +192,7 @@ if (!empty($feeds))
 			}
 
 
-			($hook = vBulletinHook::fetch_hook('blog_ssgti_feedposter_cron_item')) ? eval($hook) : false;
+			($hook = vBulletinHook::fetch_hook('blog_phpkd_vbbfp_cron_item')) ? eval($hook) : false;
 		}
 	}
 
@@ -201,7 +201,7 @@ if (!empty($feeds))
 	{
 		// query feed log table to find items that are already inserted
 		$feedlogs_result = $vbulletin->db->query_read("
-			SELECT * FROM " . TABLE_PREFIX . "ssgtiblogfeedposter_log
+			SELECT * FROM " . TABLE_PREFIX . "phpkd_vbbfp_log
 			WHERE uniquehash IN ('" . implode("', '", array_map(array(&$vbulletin->db, 'escape_string'), array_keys($itemstemp))) . "')
 		");
 		while ($feedlog = $vbulletin->db->fetch_array($feedlogs_result))
@@ -217,6 +217,7 @@ if (!empty($feeds))
 	{
 		$error_type = (defined('IN_CONTROL_PANEL') ? ERRTYPE_CP : ERRTYPE_SILENT);
 		$feed_logs_inserted = false;
+		$html_parser = new vB_WysiwygHtmlParser($vbulletin);
 
 		if (defined('IN_CONTROL_PANEL'))
 		{
@@ -233,7 +234,7 @@ if (!empty($feeds))
 			$vbulletin->userinfo['bloguserid'] = $feed['userid'];
 
 
-			if ($feed['foptions'] & $vbulletin->bf_misc_ssgtiblogfeedposter['html2bbcode'])
+			if ($feed['foptions'] & $vbulletin->bf_misc_phpkd_vbbfp['html2bbcode'])
 			{
 				$body_template = nl2br($feed['bodytemplate']);
 			}
@@ -243,12 +244,12 @@ if (!empty($feeds))
 			}
 
 			$pagetext = $feed['xml']->parse_template($body_template, $item);
-			if ($feed['foptions'] & $vbulletin->bf_misc_ssgtiblogfeedposter['html2bbcode'])
+			if ($feed['foptions'] & $vbulletin->bf_misc_phpkd_vbbfp['html2bbcode'])
 			{
-				$pagetext = convert_wysiwyg_html_to_bbcode($pagetext, false, true);
+				$pagetext = $html_parser->parse_wysiwyg_html_to_bbcode($pagetext, false, true);
 			}
 
-			if ($feed['foptions'] & $vbulletin->bf_misc_ssgtiblogfeedposter['parseurl'])
+			if ($feed['foptions'] & $vbulletin->bf_misc_phpkd_vbbfp['parseurl'])
 			{
 				$pagetext = convert_url_to_bbcode($pagetext);
 			}
@@ -258,7 +259,7 @@ if (!empty($feeds))
 			$update_userids["$feed[userid]"] = true;
 
 
-			if ($feed['foptions'] & $vbulletin->bf_misc_ssgtiblogfeedposter['origdateline'])
+			if ($feed['foptions'] & $vbulletin->bf_misc_phpkd_vbbfp['origdateline'])
 			{
 				$feed['dateline'] = strtotime($item['pubDate']);
 			}
@@ -325,20 +326,20 @@ if (!empty($feeds))
 				$blogman->set('state', 'visible');
 			}
 
-			$blogman->set_bitfield('options', 'allowcomments', ($feed['foptions'] & $vbulletin->bf_misc_ssgtiblogfeedposter['allowcomments']));
-			$blogman->set_bitfield('options', 'moderatecomments', ($feed['foptions'] & $vbulletin->bf_misc_ssgtiblogfeedposter['moderatecomments']));
-			$blogman->set_bitfield('options', 'allowpingback', ($feed['foptions'] & $vbulletin->bf_misc_ssgtiblogfeedposter['allowpingback']));
-			$blogman->set_bitfield('options', 'private', ($feed['foptions'] & $vbulletin->bf_misc_ssgtiblogfeedposter['private']));
-			$blogman->set('allowsmilie', ($feed['foptions'] & $vbulletin->bf_misc_ssgtiblogfeedposter['allowsmilies']));
+			$blogman->set_bitfield('options', 'allowcomments', ($feed['foptions'] & $vbulletin->bf_misc_phpkd_vbbfp['allowcomments']));
+			$blogman->set_bitfield('options', 'moderatecomments', ($feed['foptions'] & $vbulletin->bf_misc_phpkd_vbbfp['moderatecomments']));
+			$blogman->set_bitfield('options', 'allowpingback', ($feed['foptions'] & $vbulletin->bf_misc_phpkd_vbbfp['allowpingback']));
+			$blogman->set_bitfield('options', 'private', ($feed['foptions'] & $vbulletin->bf_misc_phpkd_vbbfp['private']));
+			$blogman->set('allowsmilie', ($feed['foptions'] & $vbulletin->bf_misc_phpkd_vbbfp['allowsmilies']));
 
 			$blogman->set_info('posthash', $posthash);
 			$blogman->set_info('emailupdate', $feed['emailupdate']);
 
-			$blogman->set('title', strip_bbcode(convert_wysiwyg_html_to_bbcode($feed['xml']->parse_template($feed['titletemplate'], $item))));
+			$blogman->set('title', strip_bbcode($html_parser->parse_wysiwyg_html_to_bbcode($feed['xml']->parse_template($feed['titletemplate'], $item))));
 			$blogman->set('pagetext', $pagetext);
 
 
-			($hook = vBulletinHook::fetch_hook('blog_ssgti_feedposter_cron_process')) ? eval($hook) : false;
+			($hook = vBulletinHook::fetch_hook('blog_phpkd_vbbfp_cron_process')) ? eval($hook) : false;
 
 
 			if ($blogid = $blogman->save())
@@ -347,11 +348,11 @@ if (!empty($feeds))
 
 				$vbulletin->db->query_write("
 					UPDATE " . TABLE_PREFIX . "blog
-					SET ssgtiblogfeedposter = '" . $item['blogfeedid'] . "', ssgtiblogfeedposter_dateline = '" . TIMENOW . "'
+					SET phpkd_vbbfp = '" . $item['blogfeedid'] . "', phpkd_vbbfp_dateline = '" . TIMENOW . "'
 					WHERE blogid = '$blogid'
 				");
 
-				if ($feed['blogtype'] == 'visible' AND fetch_entry_perm('edit', $bloginfo) AND ($feed['foptions'] & $vbulletin->bf_misc_ssgtiblogfeedposter['notify']))
+				if ($feed['blogtype'] == 'visible' AND fetch_entry_perm('edit', $bloginfo) AND ($feed['foptions'] & $vbulletin->bf_misc_phpkd_vbbfp['notify']))
 				{
 					if ($vbulletin->options['vbblog_notifylinks'] AND $userinfo['permissions']['vbblog_general_permissions'] & $vbulletin->bf_ugp_vbblog_general_permissions['blog_cansendpingback'])
 					{
@@ -382,7 +383,7 @@ if (!empty($feeds))
 				}
 
 				$feedlog_insert_sql[] = "($item[blogfeedid], $blogid, '" . $feed['blogtype'] . "', '" . $vbulletin->db->escape_string($uniquehash) . "', '" . $vbulletin->db->escape_string($item['contenthash']) . "', " . TIMENOW . ")";
-				$cronlog_items["$item[blogfeedid]"][] = "\t<li>" . $vbphrase['ssgti_blogfeedposter_' . $feed['blogtype']] . " <a href=\"$bloglink\" target=\"logview\"><em>$blogtitle</em></a></li>";
+				$cronlog_items["$item[blogfeedid]"][] = "\t<li>" . $vbphrase['phpkd_vbbfp_' . $feed['blogtype']] . " <a href=\"$bloglink\" target=\"logview\"><em>$blogtitle</em></a></li>";
 			}
 
 
@@ -390,7 +391,7 @@ if (!empty($feeds))
 			{
 				// insert logs
 				$vbulletin->db->query_replace(
-					TABLE_PREFIX . 'ssgtiblogfeedposter_log',
+					TABLE_PREFIX . 'phpkd_vbbfp_log',
 					'(blogfeedid, blogid, blogtype, uniquehash, contenthash, dateline)',
 					$feedlog_insert_sql
 				);
@@ -435,7 +436,7 @@ if (!empty($feeds))
 		{
 			// update lastrun time for feeds
 			$vbulletin->db->query_write("
-				UPDATE " . TABLE_PREFIX . "ssgtiblogfeedposter
+				UPDATE " . TABLE_PREFIX . "phpkd_vbbfp
 				SET lastrun = " . TIMENOW . "
 				WHERE blogfeedid IN(" . implode(', ', array_keys($feeds)) . ")
 			");
@@ -444,7 +445,7 @@ if (!empty($feeds))
 }
 
 
-($hook = vBulletinHook::fetch_hook('blog_ssgti_feedposter_cron_complete')) ? eval($hook) : false;
+($hook = vBulletinHook::fetch_hook('blog_phpkd_vbbfp_cron_complete')) ? eval($hook) : false;
 
 
 // #############################################################################

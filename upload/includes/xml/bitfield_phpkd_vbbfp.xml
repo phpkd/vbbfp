@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<bitfields product="phpkd_vbbfp">
+	<bitfielddefs>
+		<group name="ugp">
+			<group name="phpkd_vbbfp_perms">
+				<bitfield name="cancreate"                              group="phpkd_vbbfp_perms" phrase="phpkd_vbbfp_cancreate">1</bitfield>
+				<bitfield name="moderatefeeds"                             group="phpkd_vbbfp_perms" phrase="phpkd_vbbfp_moderatefeeds">2</bitfield>
+				<bitfield name="canmassmanage"                             group="phpkd_vbbfp_perms" phrase="phpkd_vbbfp_canmassmanage">4</bitfield>
+				<!-- <bitfield name="canrunnow"                                 group="phpkd_vbbfp_perms" phrase="phpkd_vbbfp_canrunnow"    >8</bitfield> -->
+				<bitfield name="candelete"                                 group="phpkd_vbbfp_perms" phrase="phpkd_vbbfp_candelete"    >16</bitfield>
+				<bitfield name="canreset"                                  group="phpkd_vbbfp_perms" phrase="phpkd_vbbfp_canreset"     >32</bitfield>
+				<bitfield name="phpkd_vbbfp_max"     intperm="true" group="phpkd_vbbfp_perms" phrase="phpkd_vbbfp_maxfeeds"     >0</bitfield>
+			</group>
+		</group>
+		<group name="misc">
+            <group name="vbblogmoderatorpermissions">
+                <bitfield name="phpkd_vbbfp_canedit" phrase="phpkd_vbbfp_caneditfeeds" default="1">262144</bitfield>
+            </group>
+			<group name="phpkd_vbbfp">
+				<bitfield name="allowcomments">1</bitfield>
+				<bitfield name="moderatecomments">2</bitfield>
+				<bitfield name="allowpingback">4</bitfield>
+				<bitfield name="notify">8</bitfield>
+				<bitfield name="private">16</bitfield>
+				<bitfield name="parseurl">32</bitfield>
+				<bitfield name="allowsmilies">64</bitfield>
+				<bitfield name="html2bbcode">128</bitfield>
+				<bitfield name="origdateline">256</bitfield>
+			</group>
+			<group name="phpkd_vbbfp2">
+				<bitfield name="enabled">1</bitfield>
+				<bitfield name="searchboth">2</bitfield>
+				<bitfield name="matchall">4</bitfield>
+			</group>
+		</group>
+	</bitfielddefs>
+</bitfields>

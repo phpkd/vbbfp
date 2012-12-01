@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 
-<navgroups product="ssgti_blogfeedposter">
+<navgroups product="phpkd_vbbfp">
 
 	<navgroup phrase="vbulletin_blog" permissions="canblog" hr="true" displayorder="15">
 
 		<navoption displayorder="25">
-			<phrase>ssgti_blogfeedposter_feeds</phrase>
-			<link>../{$vbulletin->config[Misc][modcpdir]}/blog_ssgtifeedposter.php?do=feeds</link>
+			<phrase>phpkd_vbbfp_feeds</phrase>
+			<link>../{$vbulletin->config[Misc][modcpdir]}/blog_phpkd_vbbfp.php?do=feeds</link>
 		</navoption>
 
 	</navgroup>
